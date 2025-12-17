@@ -9,7 +9,6 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.crunchwrap89.featureorchestrator.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <toolWindow factoryClass="com.github.crunchwrap89.featureorchestrator.featureorchestrator.ui.FeatureOrchestratorToolWindowFactory" id="Feature Orchestrator" anchor="left"/>
         <postStartupActivity implementation="com.github.crunchwrap89.featureorchestrator.startup.MyProjectActivity" />
     </extensions>
