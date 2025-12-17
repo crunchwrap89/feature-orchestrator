@@ -10,8 +10,6 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.components.service
-import java.awt.BorderLayout
-import javax.swing.DefaultComboBoxModel
 import com.intellij.ui.SimpleListCellRenderer
 import javax.swing.JList
 
