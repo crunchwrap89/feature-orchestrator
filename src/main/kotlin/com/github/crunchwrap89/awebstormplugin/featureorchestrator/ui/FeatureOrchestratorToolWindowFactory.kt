@@ -118,6 +118,10 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         logArea.caretPosition = logArea.document.length
     }
 
+    override fun onClearLog() {
+        logArea.text = ""
+    }
+
     override fun onFeaturePreview(feature: BacklogFeature?) {
         featureName.text = feature?.let { "${it.name}" } ?: "No feature selected"
         featureDesc.text = feature?.description?.let { truncate(it, 600) } ?: ""

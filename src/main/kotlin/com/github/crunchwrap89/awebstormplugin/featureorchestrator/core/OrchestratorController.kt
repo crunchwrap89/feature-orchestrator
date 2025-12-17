@@ -37,6 +37,7 @@ class OrchestratorController(private val project: Project, private val listener:
     interface Listener {
         fun onStateChanged(state: OrchestratorState)
         fun onLog(message: String)
+        fun onClearLog()
         fun onFeaturePreview(feature: BacklogFeature?)
         fun onChangeCountChanged(count: Int)
         fun onPromptGenerated(prompt: String)
@@ -120,7 +121,8 @@ class OrchestratorController(private val project: Project, private val listener:
         }
         stopMonitoring()
         setState(OrchestratorState.COMPLETED)
-        info("Feature marked completed (${behavior.name}).")
+        listener.onClearLog()
+        info("Feature '${s.feature.name}' marked completed (${behavior.name}).")
         listener.onCompletion(true)
     }
 

@@ -25,6 +25,7 @@ class OrchestratorControllerTest : BasePlatformTestCase() {
             }
             override fun onLog(message: String) {
             }
+            override fun onClearLog() {}
             override fun onFeaturePreview(feature: BacklogFeature?) {}
             override fun onChangeCountChanged(count: Int) {}
             override fun onPromptGenerated(prompt: String) {}
