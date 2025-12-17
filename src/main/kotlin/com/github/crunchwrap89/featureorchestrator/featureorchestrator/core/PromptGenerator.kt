@@ -7,9 +7,7 @@ import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.Sec
 object PromptGenerator {
     fun generate(feature: BacklogFeature): String {
         val sb = StringBuilder()
-        sb.appendLine("Feature Orchestrator Prompt (WebStorm)")
-        sb.appendLine()
-        sb.appendLine("Feature: ${feature.name}")
+        sb.appendLine("Implement Feature: ${feature.name}")
         sb.appendLine()
         sb.appendLine("Description:")
         sb.appendLine(feature.description.trim())
@@ -30,7 +28,7 @@ object PromptGenerator {
         appendIfPresent(Section.CONTEXT, "Context")
 
         if (feature.acceptanceCriteria.isNotEmpty()) {
-            sb.appendLine("Acceptance Criteria (DO NOT MODIFY):")
+            sb.appendLine("Acceptance Criteria:")
             feature.acceptanceCriteria.forEach { c ->
                 when (c) {
                     is AcceptanceCriterion.FileExists -> sb.appendLine("- File exists: ${c.relativePath}")
@@ -41,10 +39,7 @@ object PromptGenerator {
         }
 
         sb.appendLine("Instructions:")
-        sb.appendLine("- Only work on THIS feature.")
-        sb.appendLine("- Do NOT modify backlog.md.")
-        sb.appendLine("- Make minimal, correct changes.")
-        sb.appendLine("- Stop when complete.")
+        sb.appendLine("- Validation is not needed for now.")
         return sb.toString().trimEnd()
     }
 }

@@ -15,9 +15,7 @@ import com.intellij.ui.content.ContentFactory
 import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.JButton
-import javax.swing.JPanel
 import javax.swing.JTextArea
-import javax.swing.JTextField
 
 class FeatureOrchestratorToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
@@ -39,9 +37,9 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         border = null
         rows = 5
     }
-    private val runButton = JButton("▶ Run Next Feature")
+    private val runButton = JButton("▶ Implement Feature")
     private val editBacklogButton = JButton("Edit Backlog").apply { isVisible = false }
-    private val verifyButton = JButton("Verify Now").apply { isEnabled = false }
+    private val verifyButton = JButton("Verify implementation").apply { isEnabled = false }
     private val logArea = JTextArea().apply {
         isEditable = false
         lineWrap = true
@@ -69,7 +67,6 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
 
         val featureCard = JBPanel<JBPanel<*>>(BorderLayout()).apply {
             border = javax.swing.BorderFactory.createTitledBorder("Feature Preview")
-            add(featureName, BorderLayout.NORTH)
             add(JBScrollPane(featureDesc), BorderLayout.CENTER)
         }
 
@@ -77,7 +74,6 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             add(runButton)
             add(editBacklogButton)
             add(verifyButton)
-            add(changesLabel)
         }
 
         val logPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -94,7 +90,6 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
             add(featureCard, BorderLayout.NORTH)
             add(buttons, BorderLayout.CENTER)
-            add(promptPanel, BorderLayout.SOUTH)
         }, BorderLayout.CENTER)
         add(logPanel, BorderLayout.SOUTH)
 
