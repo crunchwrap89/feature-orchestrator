@@ -41,6 +41,7 @@ class OrchestratorController(private val project: Project, private val listener:
         fun onFeaturePreview(feature: BacklogFeature?)
         fun onChangeCountChanged(count: Int)
         fun onPromptGenerated(prompt: String)
+        fun onClearPrompt()
         fun onCompletion(success: Boolean)
     }
 
@@ -124,6 +125,8 @@ class OrchestratorController(private val project: Project, private val listener:
         listener.onClearLog()
         info("Feature '${s.feature.name}' marked completed (${behavior.name}).")
         listener.onCompletion(true)
+        listener.onFeaturePreview(null)
+        listener.onClearPrompt()
     }
 
     private fun setFailed(reason: String) {

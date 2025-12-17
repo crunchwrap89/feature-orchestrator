@@ -82,12 +82,14 @@ class BacklogService(private val project: Project) {
                         if (completedFile == null) {
                             completedFile = parentDir.createChildData(this, "completed.md")
                             val d = FileDocumentManager.getInstance().getDocument(completedFile)
-                            d?.setText("# Completed Features\n\n")
+                            d?.setText("# Completed Features\n\n---\n")
                         }
                         val completedDoc = FileDocumentManager.getInstance().getDocument(completedFile)
                         if (completedDoc != null) {
                             val currentText = completedDoc.text
-                            val prefix = if (currentText.isNotEmpty() && !currentText.endsWith("\n")) "\n\n" else if (currentText.isNotEmpty()) "\n" else ""
+                            var prefix = ""
+                            if (currentText.isNotEmpty() && !currentText.endsWith("\n")) prefix += "\n"
+
                             // Mark as checked in the moved block
                             var checkedBlock = target.rawBlock
                             if (checkedBlock.contains("- [ ]")) {
@@ -96,7 +98,7 @@ class BacklogService(private val project: Project) {
                                 // If no checkbox, add one
                                 checkedBlock = checkedBlock.replaceFirst("- ${feature.name}", "- [x] ${feature.name}")
                             }
-                            completedDoc.setText(currentText + prefix + checkedBlock)
+                            completedDoc.setText(currentText + prefix + checkedBlock + "\n\n---")
                             FileDocumentManager.getInstance().saveDocument(completedDoc)
                         }
 
