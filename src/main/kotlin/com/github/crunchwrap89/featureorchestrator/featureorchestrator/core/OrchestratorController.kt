@@ -4,7 +4,7 @@ import com.github.crunchwrap89.featureorchestrator.featureorchestrator.backlog.B
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.BacklogFeature
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.ExecutionSession
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.OrchestratorState
-import com.github.crunchwrap89.awebstormplugin.featureorchestrator.settings.OrchestratorSettings
+import com.github.crunchwrap89.featureorchestrator.featureorchestrator.settings.OrchestratorSettings
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger

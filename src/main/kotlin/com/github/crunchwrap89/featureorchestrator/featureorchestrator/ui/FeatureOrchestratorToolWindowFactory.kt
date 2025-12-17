@@ -82,7 +82,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         }
 
         val promptPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            border = javax.swing.BorderFactory.createTitledBorder("AI Prompt (copy will be handled)")
+            border = javax.swing.BorderFactory.createTitledBorder("AI Prompt")
             add(JBScrollPane(promptPreview), BorderLayout.CENTER)
         }
 

@@ -3,7 +3,7 @@ package com.github.crunchwrap89.featureorchestrator.services
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import com.github.crunchwrap89.awebstormplugin.MyBundle
+import com.github.crunchwrap89.featureorchestrator.MyBundle
 
 @Service(Service.Level.PROJECT)
 class MyProjectService(project: Project) {
