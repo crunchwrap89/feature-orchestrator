@@ -106,6 +106,7 @@ object BacklogParser {
         body.lines().forEachIndexed { idx, line ->
             val trimmed = line.trim()
             if (trimmed.isBlank()) return@forEachIndexed
+            if (trimmed.startsWith("---")) return@forEachIndexed // Ignore separators
             when {
                 trimmed.startsWith("• ") || trimmed.startsWith("- ") || trimmed.startsWith("* ") -> {
                     val spec = trimmed.drop(2).trim()
@@ -116,10 +117,12 @@ object BacklogParser {
                         spec.startsWith("Command succeeds:", ignoreCase = true) -> {
                             list += AcceptanceCriterion.CommandSucceeds(spec.substringAfter(":").trim())
                         }
-                        else -> warnings += warning(idx, "Unknown acceptance criterion: '$spec'")
+                        // Ignore other criteria without warning
                     }
                 }
-                else -> warnings += warning(idx, "Unrecognized acceptance criteria line: '$trimmed'")
+                else -> {
+                    // Ignore other lines without warning
+                }
             }
         }
         return list

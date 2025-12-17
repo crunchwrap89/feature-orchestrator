@@ -18,6 +18,10 @@ import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.util.messages.MessageBusConnection
 import java.awt.datatransfer.StringSelection
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
+import com.intellij.openapi.application.ApplicationManager
 
 class OrchestratorController(private val project: Project, private val listener: Listener) : Disposable {
     private val log = Logger.getInstance(OrchestratorController::class.java)
@@ -79,9 +83,23 @@ class OrchestratorController(private val project: Project, private val listener:
             if (ok) completeSuccess() else setFailed("User cancelled completion without criteria.")
             return
         }
-        val result = AcceptanceVerifier.verify(project, s.feature.acceptanceCriteria)
-        result.details.forEach { log(it) }
-        if (result.success) completeSuccess() else setFailed("One or more criteria failed.")
+
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Verifying Feature", true) {
+            override fun run(indicator: ProgressIndicator) {
+                try {
+                    val result = AcceptanceVerifier.verify(project, s.feature.acceptanceCriteria)
+                    ApplicationManager.getApplication().invokeLater {
+                        result.details.forEach { log(it) }
+                        if (result.success) completeSuccess() else setFailed("One or more criteria failed.")
+                    }
+                } catch (e: Exception) {
+                    ApplicationManager.getApplication().invokeLater {
+                        log("ERROR: Verification failed with exception: ${e.message}")
+                        setFailed("Verification exception: ${e.message}")
+                    }
+                }
+            }
+        })
     }
 
     fun reset() {

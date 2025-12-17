@@ -5,6 +5,7 @@ import com.github.crunchwrap89.awebstormplugin.featureorchestrator.model.Orchest
 import com.github.crunchwrap89.awebstormplugin.featureorchestrator.settings.OrchestratorSettings
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.ui.UIUtil
 import java.util.concurrent.atomic.AtomicReference
 
 class OrchestratorControllerTest : BasePlatformTestCase() {
@@ -54,6 +55,7 @@ class OrchestratorControllerTest : BasePlatformTestCase() {
 
         // Verify - should fail because test.txt does not exist
         controller.verifyNow()
+        waitForState(OrchestratorState.FAILED)
         assertEquals(OrchestratorState.FAILED, lastState.get())
 
         // Create test.txt
@@ -61,6 +63,15 @@ class OrchestratorControllerTest : BasePlatformTestCase() {
 
         // Verify again - should succeed
         controller.verifyNow()
+        waitForState(OrchestratorState.COMPLETED)
         assertEquals(OrchestratorState.COMPLETED, lastState.get())
+    }
+
+    private fun waitForState(expected: OrchestratorState) {
+        val start = System.currentTimeMillis()
+        while (lastState.get() != expected && System.currentTimeMillis() - start < 5000) {
+            UIUtil.dispatchAllInvocationEvents()
+            Thread.sleep(10)
+        }
     }
 }

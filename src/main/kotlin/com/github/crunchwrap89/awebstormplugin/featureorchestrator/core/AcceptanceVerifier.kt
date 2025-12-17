@@ -3,6 +3,7 @@ package com.github.crunchwrap89.awebstormplugin.featureorchestrator.core
 import com.github.crunchwrap89.awebstormplugin.featureorchestrator.model.AcceptanceCriterion
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -19,18 +20,20 @@ object AcceptanceVerifier {
             when (c) {
                 is AcceptanceCriterion.FileExists -> {
                     var exists = false
-                    val roots = ProjectRootManager.getInstance(project).contentRoots
-                    for (root in roots) {
-                        if (root.findFileByRelativePath(c.relativePath) != null) {
-                            exists = true
-                            break
+                    runReadAction {
+                        val roots = ProjectRootManager.getInstance(project).contentRoots
+                        for (root in roots) {
+                            if (root.findFileByRelativePath(c.relativePath) != null) {
+                                exists = true
+                                break
+                            }
                         }
-                    }
 
-                    if (!exists) {
-                        val path = project.basePath?.let { File(it, c.relativePath) } ?: File(c.relativePath)
-                        exists = path.exists()
-                        if (exists) LocalFileSystem.getInstance().refreshAndFindFileByIoFile(path)
+                        if (!exists) {
+                            val path = project.basePath?.let { File(it, c.relativePath) } ?: File(c.relativePath)
+                            exists = path.exists()
+                            if (exists) LocalFileSystem.getInstance().refreshAndFindFileByIoFile(path)
+                        }
                     }
 
                     details += (if (exists) "✔ File exists: ${c.relativePath}" else "✘ File missing: ${c.relativePath}")
