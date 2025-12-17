@@ -28,7 +28,7 @@ class FeatureOrchestratorToolWindowFactory : ToolWindowFactory {
 private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<FeatureOrchestratorPanel>(BorderLayout()), OrchestratorController.Listener {
     private val statusLabel = JBLabel("Status: Idle")
     private val statusIndicator = JBLabel("●").apply { foreground = JBColor.GRAY }
-    private val featureName = JBLabel("")
+    private val featureName = JBLabel("", javax.swing.SwingConstants.CENTER)
     private val featureDesc = JTextArea().apply {
         isEditable = false
         lineWrap = true
@@ -37,6 +37,8 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         border = null
         rows = 5
     }
+    private val prevButton = JButton("<").apply { isEnabled = false }
+    private val nextButton = JButton(">").apply { isEnabled = false }
     private val runButton = JButton("▶ Implement Feature")
     private val editBacklogButton = JButton("Edit Backlog").apply { isVisible = false }
     private val verifyButton = JButton("Verify implementation").apply { isEnabled = false }
@@ -58,16 +60,17 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
     private var lastStatus: BacklogStatus = BacklogStatus.OK
 
     init {
-        val header = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            add(JBPanel<JBPanel<*>>().apply {
-                add(statusIndicator)
-                add(statusLabel)
-            }, BorderLayout.WEST)
-        }
-
         val featureCard = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            border = javax.swing.BorderFactory.createTitledBorder("Feature Preview")
-            add(JBScrollPane(featureDesc), BorderLayout.CENTER)
+            border = javax.swing.BorderFactory.createTitledBorder("Select feature")
+            val navPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+                add(prevButton, BorderLayout.WEST)
+                add(featureName, BorderLayout.CENTER)
+                add(nextButton, BorderLayout.EAST)
+            }
+            add(navPanel, BorderLayout.NORTH)
+            val scrollPane = JBScrollPane(featureDesc)
+            scrollPane.border = javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)
+            add(scrollPane, BorderLayout.CENTER)
         }
 
         val buttons = JBPanel<JBPanel<*>>().apply {
@@ -77,22 +80,29 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         }
 
         val logPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            border = javax.swing.BorderFactory.createTitledBorder("Execution Log")
+            border = javax.swing.BorderFactory.createEtchedBorder()
+
+            val logHeader = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+                border = javax.swing.BorderFactory.createEmptyBorder(2, 5, 2, 5)
+                add(JBLabel("Execution Log"), BorderLayout.WEST)
+                add(JBPanel<JBPanel<*>>().apply {
+                    add(statusIndicator)
+                    add(statusLabel)
+                }, BorderLayout.EAST)
+            }
+
+            add(logHeader, BorderLayout.NORTH)
             add(JBScrollPane(logArea), BorderLayout.CENTER)
         }
 
-        val promptPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            border = javax.swing.BorderFactory.createTitledBorder("AI Prompt")
-            add(JBScrollPane(promptPreview), BorderLayout.CENTER)
-        }
-
-        add(header, BorderLayout.NORTH)
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
             add(featureCard, BorderLayout.NORTH)
             add(buttons, BorderLayout.CENTER)
         }, BorderLayout.CENTER)
         add(logPanel, BorderLayout.SOUTH)
 
+        prevButton.addActionListener { controller.previousFeature() }
+        nextButton.addActionListener { controller.nextFeature() }
         runButton.addActionListener { controller.runNextFeature() }
         editBacklogButton.addActionListener { controller.createOrUpdateBacklog() }
         verifyButton.addActionListener { controller.verifyNow() }
@@ -139,6 +149,8 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
                 runButton.isVisible = false
                 editBacklogButton.isVisible = true
                 editBacklogButton.text = "Create Backlog"
+                prevButton.isEnabled = false
+                nextButton.isEnabled = false
             }
             BacklogStatus.NO_FEATURES -> {
                 featureName.text = "No Features"
@@ -146,12 +158,19 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
                 runButton.isVisible = false
                 editBacklogButton.isVisible = true
                 editBacklogButton.text = "Add Feature"
+                prevButton.isEnabled = false
+                nextButton.isEnabled = false
             }
             BacklogStatus.OK -> {
                 runButton.isVisible = true
                 editBacklogButton.isVisible = false
             }
         }
+    }
+
+    override fun onNavigationStateChanged(hasPrevious: Boolean, hasNext: Boolean) {
+        prevButton.isEnabled = hasPrevious
+        nextButton.isEnabled = hasNext
     }
 
     override fun onFeaturePreview(feature: BacklogFeature?) {

@@ -7,7 +7,6 @@ import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.Orc
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.settings.OrchestratorSettings
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
@@ -35,6 +34,9 @@ class OrchestratorController(private val project: Project, private val listener:
     private var session: ExecutionSession? = null
     private var vfsConnection: MessageBusConnection? = null
 
+    private var availableFeatures: List<BacklogFeature> = emptyList()
+    private var currentFeatureIndex: Int = 0
+
     interface Listener {
         fun onStateChanged(state: OrchestratorState)
         fun onLog(message: String)
@@ -45,6 +47,7 @@ class OrchestratorController(private val project: Project, private val listener:
         fun onClearPrompt()
         fun onCompletion(success: Boolean)
         fun onBacklogStatusChanged(status: BacklogStatus)
+        fun onNavigationStateChanged(hasPrevious: Boolean, hasNext: Boolean)
     }
 
     init {
@@ -52,6 +55,24 @@ class OrchestratorController(private val project: Project, private val listener:
         ApplicationManager.getApplication().invokeLater {
             validateBacklog()
         }
+        setupBacklogListener()
+    }
+
+    private fun setupBacklogListener() {
+        val connection = project.messageBus.connect(this)
+        connection.subscribe(VirtualFileManager.VFS_CHANGES, object : BulkFileListener {
+            override fun after(events: MutableList<out VFileEvent>) {
+                val relevant = events.any { event ->
+                    val name = event.file?.name ?: event.path.substringAfterLast('/')
+                    name.equals("backlog.md", ignoreCase = true)
+                }
+                if (relevant) {
+                    ApplicationManager.getApplication().invokeLater {
+                        validateBacklog()
+                    }
+                }
+            }
+        })
     }
 
     fun validateBacklog() {
@@ -59,22 +80,53 @@ class OrchestratorController(private val project: Project, private val listener:
         if (backlogFile == null) {
             listener.onBacklogStatusChanged(BacklogStatus.MISSING)
             listener.onFeaturePreview(null)
+            listener.onNavigationStateChanged(false, false)
             return
         }
         val backlog = backlogService.parseBacklog()
         if (backlog == null) {
             listener.onBacklogStatusChanged(BacklogStatus.NO_FEATURES)
             listener.onFeaturePreview(null)
+            listener.onNavigationStateChanged(false, false)
             return
         }
-        val feature = backlogService.firstUncheckedFeature(backlog)
-        if (feature == null) {
+        availableFeatures = backlog.features.filter { !it.checked }
+        currentFeatureIndex = 0
+        if (availableFeatures.isEmpty()) {
             listener.onBacklogStatusChanged(BacklogStatus.NO_FEATURES)
             listener.onFeaturePreview(null)
+            listener.onNavigationStateChanged(false, false)
             return
         }
         listener.onBacklogStatusChanged(BacklogStatus.OK)
-        listener.onFeaturePreview(feature)
+        updateFeaturePreview()
+    }
+
+    fun nextFeature() {
+        if (currentFeatureIndex < availableFeatures.size - 1) {
+            currentFeatureIndex++
+            updateFeaturePreview()
+        }
+    }
+
+    fun previousFeature() {
+        if (currentFeatureIndex > 0) {
+            currentFeatureIndex--
+            updateFeaturePreview()
+        }
+    }
+
+    private fun updateFeaturePreview() {
+        if (availableFeatures.isNotEmpty() && currentFeatureIndex in availableFeatures.indices) {
+            listener.onFeaturePreview(availableFeatures[currentFeatureIndex])
+            listener.onNavigationStateChanged(
+                hasPrevious = currentFeatureIndex > 0,
+                hasNext = currentFeatureIndex < availableFeatures.size - 1
+            )
+        } else {
+            listener.onFeaturePreview(null)
+            listener.onNavigationStateChanged(false, false)
+        }
     }
 
     fun createOrUpdateBacklog() {
@@ -94,24 +146,27 @@ class OrchestratorController(private val project: Project, private val listener:
 
     fun runNextFeature() {
         require(state == OrchestratorState.IDLE || state == OrchestratorState.FAILED || state == OrchestratorState.COMPLETED) { "Invalid state" }
-        val backlog = backlogService.parseBacklog()
-        if (backlog == null) {
-            warn("backlog.md not found in project root.")
-            setState(OrchestratorState.FAILED)
-            validateBacklog()
+
+        // Re-validate to ensure list is up to date, but try to keep selection if possible
+        val oldFeatureName = if (availableFeatures.isNotEmpty()) availableFeatures[currentFeatureIndex].name else null
+        validateBacklog()
+
+        if (availableFeatures.isEmpty()) {
+            // validateBacklog already handled UI updates
             return
         }
 
-        backlog.warnings.forEach { warn(it) }
-        val feature = backlogService.firstUncheckedFeature(backlog)
-        if (feature == null) {
-            info("No unchecked features found. You're all caught up!")
-            setState(OrchestratorState.IDLE)
-            listener.onFeaturePreview(null)
-            validateBacklog()
-            return
+        // Try to restore selection or default to 0
+        if (oldFeatureName != null) {
+            val newIndex = availableFeatures.indexOfFirst { it.name == oldFeatureName }
+            if (newIndex != -1) {
+                currentFeatureIndex = newIndex
+                updateFeaturePreview()
+            }
         }
-        listener.onFeaturePreview(feature)
+
+        val feature = availableFeatures[currentFeatureIndex]
+
         val prompt = PromptGenerator.generate(feature)
         listener.onPromptGenerated(prompt)
         if (settings.copyPromptToClipboard) {
@@ -125,7 +180,6 @@ class OrchestratorController(private val project: Project, private val listener:
         startMonitoring(feature)
         setState(OrchestratorState.AWAITING_AI)
         info("Prompt ready to be pasted to your AI Agent of choice.")
-        info("Verify implementation when your AI Agent is completed.")
     }
 
     fun verifyNow() {
@@ -137,18 +191,18 @@ class OrchestratorController(private val project: Project, private val listener:
             return
         }
 
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Verifying Feature", true) {
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Verifying feature", true) {
             override fun run(indicator: ProgressIndicator) {
                 try {
-                    ApplicationManager.getApplication().invokeLater { info("Validating implementation...") }
+                    ApplicationManager.getApplication().invokeLater { info("Verifying implementation...") }
                     val result = AcceptanceVerifier.verify(project, s.feature.acceptanceCriteria)
                     ApplicationManager.getApplication().invokeLater {
                         result.details.forEach { log(it) }
                         if (result.success) {
-                            info("Validation successfully completed.")
+                            info("Verification successfully completed.")
                             completeSuccess()
                         } else {
-                            info("Validation failed.")
+                            info("Verification failed.")
                             val prompt = PromptGenerator.generateFailurePrompt(s.feature, result.failures)
                             listener.onPromptGenerated(prompt)
                             if (settings.copyPromptToClipboard) {
@@ -159,7 +213,7 @@ class OrchestratorController(private val project: Project, private val listener:
                                 Messages.showInfoMessage(project, "Verification failed. Failure prompt prepared. Paste it into your AI tool to fix the issues.", "Feature Orchestrator")
                             }
                             setState(OrchestratorState.AWAITING_AI)
-                            info("Paste the failure prompt to your AI Agent and re-validate when it has finished.")
+                            info("Paste the new prompt to your AI Agent and Verify implementation when it has finished.")
                         }
                     }
                 } catch (e: Exception) {

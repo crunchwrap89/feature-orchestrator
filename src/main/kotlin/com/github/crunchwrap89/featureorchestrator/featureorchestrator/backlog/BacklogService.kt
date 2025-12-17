@@ -20,10 +20,8 @@ class BacklogService(private val project: Project) {
         private val BACKLOG_HEADER = """
 # Backlog
 
-Add new features below. Each feature must start with `## Feature` followed by the feature name in a list item.
-Required sections: `### Description`.
-Optional sections: `### Requirements`, `### Out of Scope`, `### Acceptance Criteria`, `### Notes`, `### Context`.
-Wrap features in `---` separators.
+- Wrap features in `---` separators. 
+- Feature and Description is required, other fields are optional but recommended.
 """.trimIndent()
 
         private val TEMPLATE_FEATURE = """
