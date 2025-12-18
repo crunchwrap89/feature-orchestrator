@@ -100,14 +100,30 @@ class OrchestratorController(private val project: Project, private val listener:
             listener.onNavigationStateChanged(false, false)
             return
         }
+
+        val oldSelection = if (availableFeatures.isNotEmpty() && currentFeatureIndex in availableFeatures.indices) {
+            availableFeatures[currentFeatureIndex].name
+        } else null
+
         availableFeatures = backlog.features.filter { !it.checked }
-        currentFeatureIndex = 0
+
         if (availableFeatures.isEmpty()) {
+            currentFeatureIndex = 0
             listener.onBacklogStatusChanged(BacklogStatus.NO_FEATURES)
             listener.onFeaturePreview(null)
             listener.onNavigationStateChanged(false, false)
             return
         }
+
+        // Restore selection
+        currentFeatureIndex = 0
+        if (oldSelection != null) {
+            val idx = availableFeatures.indexOfFirst { it.name == oldSelection }
+            if (idx != -1) {
+                currentFeatureIndex = idx
+            }
+        }
+
         listener.onBacklogStatusChanged(BacklogStatus.OK)
         updateFeaturePreview()
     }
@@ -196,7 +212,18 @@ class OrchestratorController(private val project: Project, private val listener:
     }
 
     fun verifyNow() {
-        val s = session ?: return
+        // Ensure we have the latest backlog state
+        validateBacklog()
+
+        var s = session ?: return
+
+        // Refresh feature from availableFeatures to get latest acceptance criteria
+        val currentFeature = availableFeatures.find { it.name == s.feature.name }
+        if (currentFeature != null && currentFeature != s.feature) {
+            s = s.copy(feature = currentFeature)
+            session = s
+        }
+
         setState(OrchestratorState.VERIFYING)
         if (s.feature.acceptanceCriteria.isEmpty()) {
             val ok = Messages.showYesNoDialog(project, "No Acceptance Criteria found. Mark feature as completed?", "Feature Orchestrator", null) == Messages.YES
@@ -311,7 +338,7 @@ class OrchestratorController(private val project: Project, private val listener:
         }
         stopMonitoring()
         setState(OrchestratorState.COMPLETED)
-        info("Feature '${s.feature.name}' marked completed (${behavior.name}).")
+        info("Feature '${s.feature.name}' marked as completed.")
         listener.onCompletion(true)
         listener.onFeaturePreview(null)
         listener.onClearPrompt()
@@ -379,7 +406,7 @@ private class ManualVerificationDialog(project: Project, val criteria: List<Acce
     override fun createCenterPanel(): JComponent {
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-        panel.add(JLabel("Please confirm the following manual criteria are fulfilled:"))
+        panel.add(JLabel("Please confirm the following criteria are fulfilled:"))
         checkboxes.forEach { panel.add(it) }
         return panel
     }

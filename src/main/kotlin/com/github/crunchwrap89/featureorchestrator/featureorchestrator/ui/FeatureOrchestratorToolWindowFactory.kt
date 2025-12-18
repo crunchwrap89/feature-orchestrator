@@ -61,6 +61,9 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         wrapStyleWord = true
         rows = 10
     }
+    private val clearLogButton = JButton("Clear Log").apply {
+        addActionListener { logArea.text = "" }
+    }
 
     private val controller = OrchestratorController(project, this)
     private var lastStatus: BacklogStatus = BacklogStatus.OK
@@ -158,6 +161,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
 
             add(logHeader, BorderLayout.NORTH)
             add(JBScrollPane(logArea), BorderLayout.CENTER)
+            add(clearLogButton, BorderLayout.SOUTH)
         }
 
         val topPanel = JBPanel<JBPanel<*>>(BorderLayout())
