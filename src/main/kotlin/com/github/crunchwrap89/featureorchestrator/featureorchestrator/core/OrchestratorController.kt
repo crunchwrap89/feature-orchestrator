@@ -180,8 +180,6 @@ class OrchestratorController(private val project: Project, private val listener:
         setState(OrchestratorState.HANDOFF)
         startMonitoring(feature)
         setState(OrchestratorState.AWAITING_AI)
-        info("Prompt ready to be pasted to your AI Agent of choice.")
-        info("Verify implementation when your AI Agent is completed.")
     }
 
     fun verifyNow() {
@@ -204,7 +202,8 @@ class OrchestratorController(private val project: Project, private val listener:
                             info("Verification successfully completed.")
                             completeSuccess()
                         } else {
-                            info("Verification failed.")
+                            info("Verification failed - Acceptance Criterias are NOT fulfilled.")
+                            info("Preparing a new prompt.")
                             val prompt = PromptGenerator.generateFailurePrompt(s.feature, result.failures)
                             listener.onPromptGenerated(prompt)
                             handoffPrompt(prompt)

@@ -16,7 +16,7 @@
 
 # Feature Orchestrator
 Today you must keep track of your backlog in a separate tool and write your prompts based on what's in your backlog.
-Then you need to verify the results manually, and you need to write new prompts to fix what’s missing if something is wrong. You also need to keep your backlog in sync manually.
+After feeding your AI you need to verify the results manually, and then you need to write new prompts to fix what’s missing if something is wrong. You also need to keep your backlog in sync manually.
 
 **Feature Orchestrator** makes everything in this process easier.
 
@@ -78,13 +78,6 @@ Feature Orchestrator never runs on its own and never modifies planning files via
 It’s a **workflow orchestrator** — and that’s exactly why it works.
 
 ---
-
-## Summary
-
-**Feature Orchestrator helps AI actually finish features — and proves when they’re done.**
-
-If you use AI to write code, but still care about correctness, structure, and momentum, this plugin is for you.
-
 <!-- Plugin description end -->
 
 ## Installation

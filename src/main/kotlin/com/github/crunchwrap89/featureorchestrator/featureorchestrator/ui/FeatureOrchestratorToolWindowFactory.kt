@@ -184,7 +184,6 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
     }
 
     override fun onPromptGenerated(prompt: String) {
-        onLog("Prompt prepared and handed off.")
         promptPreview.text = prompt
     }
 

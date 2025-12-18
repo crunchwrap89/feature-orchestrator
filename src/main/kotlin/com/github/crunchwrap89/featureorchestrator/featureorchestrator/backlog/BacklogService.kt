@@ -132,16 +132,7 @@ pattern as the rest of the site.
                         doc.setText(newText)
                     }
                     CompletionBehavior.REMOVE_FEATURE -> {
-                        // Remove the entire block from start to just before the next ## Feature or EOF
-                        val blockText = target.rawBlock
-                        val startIdx = text.indexOf(blockText)
-                        if (startIdx >= 0) {
-                            var endIdx = startIdx + blockText.length
-                            // remove trailing newlines too
-                            while (endIdx < text.length && (text[endIdx] == '\n' || text[endIdx] == '\r')) endIdx++
-                            val newText = text.removeRange(startIdx, endIdx)
-                            doc.setText(newText)
-                        }
+                        removeFeatureBlock(text, target.rawBlock, doc)
                     }
                     CompletionBehavior.MOVE_TO_COMPLETED -> {
                         // 1. Append to completed.md
@@ -171,15 +162,7 @@ pattern as the rest of the site.
                         }
 
                         // 2. Remove from backlog.md
-                        val blockText = target.rawBlock
-                        val startIdx = text.indexOf(blockText)
-                        if (startIdx >= 0) {
-                            var endIdx = startIdx + blockText.length
-                            // remove trailing newlines too
-                            while (endIdx < text.length && (text[endIdx] == '\n' || text[endIdx] == '\r')) endIdx++
-                            val newText = text.removeRange(startIdx, endIdx)
-                            doc.setText(newText)
-                        }
+                        removeFeatureBlock(text, target.rawBlock, doc)
                     }
                 }
                 FileDocumentManager.getInstance().saveDocument(doc)
@@ -188,6 +171,47 @@ pattern as the rest of the site.
         } catch (e: Exception) {
             log.warn("Failed to update backlog.md", e)
             false
+        }
+    }
+
+    private fun removeFeatureBlock(text: String, blockText: String, doc: com.intellij.openapi.editor.Document) {
+        val startIdx = text.indexOf(blockText)
+        if (startIdx >= 0) {
+            var removalStart = startIdx
+            var removalEnd = startIdx + blockText.length
+
+            // Look backwards for preceding separator
+            var lookBack = removalStart - 1
+            while (lookBack >= 0 && text[lookBack].isWhitespace()) {
+                lookBack--
+            }
+            if (lookBack >= 2 && text.substring(lookBack - 2, lookBack + 1) == "---") {
+                removalStart = lookBack - 2
+                // Include preceding newline if present
+                if (removalStart > 0 && text[removalStart - 1] == '\n') {
+                    removalStart--
+                }
+            }
+
+            // Look forwards for following separator
+            var lookForward = removalEnd
+            while (lookForward < text.length && text[lookForward].isWhitespace()) {
+                lookForward++
+            }
+            if (lookForward + 3 <= text.length && text.substring(lookForward, lookForward + 3) == "---") {
+                removalEnd = lookForward + 3
+            } else {
+                // If no separator, just consume whitespace
+                removalEnd = lookForward
+            }
+
+            // Consume trailing newlines
+            while (removalEnd < text.length && (text[removalEnd] == '\n' || text[removalEnd] == '\r')) {
+                removalEnd++
+            }
+
+            val newText = text.removeRange(removalStart, removalEnd)
+            doc.setText(newText)
         }
     }
 }

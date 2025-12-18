@@ -27,19 +27,6 @@ object PromptGenerator {
         appendIfPresent(Section.NOTES, "Notes")
         appendIfPresent(Section.CONTEXT, "Context")
 
-        if (feature.acceptanceCriteria.isNotEmpty()) {
-            sb.appendLine("Acceptance Criteria:")
-            feature.acceptanceCriteria.forEach { c ->
-                when (c) {
-                    is AcceptanceCriterion.FileExists -> sb.appendLine("- File exists: ${c.relativePath}")
-                    is AcceptanceCriterion.CommandSucceeds -> sb.appendLine("- Command succeeds: ${c.command}")
-                }
-            }
-            sb.appendLine()
-        }
-
-        sb.appendLine("Instructions:")
-        sb.appendLine("- Validation is not needed for now.")
         return sb.toString().trimEnd()
     }
 
