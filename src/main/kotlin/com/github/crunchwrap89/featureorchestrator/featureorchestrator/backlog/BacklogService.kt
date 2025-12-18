@@ -19,7 +19,6 @@ class BacklogService(private val project: Project) {
     companion object {
         private val BACKLOG_HEADER = """
 # Backlog
-
 - Wrap features in `---` separators. 
 - Feature and Description is required, other fields are optional but recommended.
 - Acceptance Criteria will be used to verify completion, some automatically, others may require manual verification.
@@ -27,7 +26,7 @@ class BacklogService(private val project: Project) {
 
         private val TEMPLATE_FEATURE = """
 ---
-## Feature
+## Feature name
 - New About Page
 
 ### Description

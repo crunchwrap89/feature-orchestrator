@@ -6,7 +6,7 @@ import com.intellij.openapi.diagnostic.Logger
 object BacklogParser {
     private val log = Logger.getInstance(BacklogParser::class.java)
 
-    private val featureHeaderRegex = Regex("""^## +Feature\s*$""")
+    private val featureHeaderRegex = Regex("""^## +Feature name\s*$""")
     private val nameRegex = Regex("""^- (?:\[( |x|X)] +)?(.+)$""")
     private val sectionHeaderRegex = Regex("""^### +(.+)$""")
     private val separatorRegex = Regex("""^---+\s*$""")
@@ -21,13 +21,13 @@ object BacklogParser {
             if (!featureHeaderRegex.matches(lines[i])) { i++; continue }
             val blockStart = i
             i++
-            // Skip blank lines after ## Feature
+            // Skip blank lines after ## Feature name
             while (i < lines.size && lines[i].isBlank()) {
                 i++
             }
 
             if (i >= lines.size || !nameRegex.matches(lines[i])) {
-                warnings += warning(blockStart, "Missing feature name line (e.g. '- Feature Name') after '## Feature'. Skipping block.")
+                warnings += warning(blockStart, "Missing feature name line (e.g. '- Feature Name') after '## Feature name'. Skipping block.")
                 i++
                 continue
             }

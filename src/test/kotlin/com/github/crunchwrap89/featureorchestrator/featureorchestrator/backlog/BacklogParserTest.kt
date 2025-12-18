@@ -11,7 +11,7 @@ class BacklogParserTest {
         val text = """
             # Backlog
 
-            ## Feature
+            ## Feature name
             - [ ] About Page
 
             ### Description
@@ -32,7 +32,7 @@ class BacklogParserTest {
         val text = """
             # Backlog
 
-            ## Feature
+            ## Feature name
             - [ ] About Page
             ### Description
             Add a new "About" page.
@@ -52,7 +52,7 @@ class BacklogParserTest {
         val text = """
             # Backlog
 
-            ## Feature
+            ## Feature name
             - [ ] About Page
             ### Description
             Desc

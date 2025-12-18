@@ -47,7 +47,7 @@ class OrchestratorControllerTest : BasePlatformTestCase() {
         // Create backlog.md
         myFixture.addFileToProject("backlog.md", """
             # Backlog
-            ## Feature
+            ## Feature name
             - [ ] Test Feature
             ### Description
             Test description
@@ -80,14 +80,14 @@ class OrchestratorControllerTest : BasePlatformTestCase() {
         // Create backlog.md
         myFixture.addFileToProject("backlog.md", """
             # Backlog
-            ## Feature
+            ## Feature name
             - [ ] Feature 1
             ### Description
             Desc 1
             ### Acceptance Criteria
             - File exists: f1.txt
 
-            ## Feature
+            ## Feature name
             - [ ] Feature 2
             ### Description
             Desc 2
