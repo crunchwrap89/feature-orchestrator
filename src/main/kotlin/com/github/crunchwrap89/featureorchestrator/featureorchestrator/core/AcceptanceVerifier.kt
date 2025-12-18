@@ -15,7 +15,8 @@ import java.io.File
 data class VerificationResult(
     val success: Boolean,
     val details: List<String>,
-    val failures: List<FailureDetail> = emptyList()
+    val failures: List<FailureDetail> = emptyList(),
+    val manualVerifications: List<AcceptanceCriterion.ManualVerification> = emptyList()
 )
 
 data class FailureDetail(
@@ -30,6 +31,7 @@ object AcceptanceVerifier {
         val timeoutMs = settings.commandTimeoutSeconds * 1000
         val details = mutableListOf<String>()
         val failures = mutableListOf<FailureDetail>()
+        val manualVerifications = mutableListOf<AcceptanceCriterion.ManualVerification>()
         var allOk = true
         criteria.forEach { c ->
             when (c) {
@@ -99,10 +101,11 @@ object AcceptanceVerifier {
                 }
                 is AcceptanceCriterion.ManualVerification -> {
                     details += "⚠ Manual verification required: ${c.description}"
+                    manualVerifications += c
                 }
             }
         }
-        return VerificationResult(allOk, details, failures)
+        return VerificationResult(allOk, details, failures, manualVerifications)
     }
 
     private data class CommandResult(val success: Boolean, val details: String)

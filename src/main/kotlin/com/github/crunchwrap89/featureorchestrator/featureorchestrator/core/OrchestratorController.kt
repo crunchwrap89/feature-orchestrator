@@ -26,6 +26,13 @@ import com.intellij.openapi.wm.ToolWindowManager
 
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.BacklogStatus
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion
+import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.ui.components.JBCheckBox
+import javax.swing.BoxLayout
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JPanel
 
 class OrchestratorController(private val project: Project, private val listener: Listener) : Disposable {
     private val settings = project.service<OrchestratorSettings>()
@@ -206,19 +213,31 @@ class OrchestratorController(private val project: Project, private val listener:
                     ApplicationManager.getApplication().invokeLater {
                         result.details.forEach { log(it) }
                         if (result.success) {
-                            info("Verification successfully completed.")
-                            completeSuccess()
-                        } else {
-                            info("Verification failed - Acceptance Criterias are NOT fulfilled.")
-                            info("Preparing a new prompt.")
-                            val prompt = PromptGenerator.generateFailurePrompt(s.feature, result.failures)
-                            listener.onPromptGenerated(prompt)
-                            handoffPrompt(prompt)
-
-                            if (settings.showNotificationAfterHandoff) {
-                                Messages.showInfoMessage(project, "Verification failed. Failure prompt prepared. Paste it into your AI tool to fix the issues.", "Feature Orchestrator")
+                            if (result.manualVerifications.isNotEmpty()) {
+                                val dialog = ManualVerificationDialog(project, result.manualVerifications)
+                                if (dialog.showAndGet()) {
+                                    val unfulfilled = dialog.getUnfulfilledCriteria()
+                                    if (unfulfilled.isEmpty()) {
+                                        info("Manual verification confirmed.")
+                                        info("Verification successfully completed.")
+                                        completeSuccess()
+                                    } else {
+                                        info("Manual verification incomplete.")
+                                        val manualFailures = unfulfilled.map {
+                                            FailureDetail(it, "User indicated this manual verification was not fulfilled.")
+                                        }
+                                        handleVerificationFailure(s.feature, result.failures + manualFailures)
+                                    }
+                                } else {
+                                    info("Manual verification cancelled.")
+                                    setState(OrchestratorState.AWAITING_AI)
+                                }
+                            } else {
+                                info("Verification successfully completed.")
+                                completeSuccess()
                             }
-                            setState(OrchestratorState.AWAITING_AI)
+                        } else {
+                            handleVerificationFailure(s.feature, result.failures)
                         }
                     }
                 } catch (e: Exception) {
@@ -229,6 +248,18 @@ class OrchestratorController(private val project: Project, private val listener:
                 }
             }
         })
+    }
+
+    private fun handleVerificationFailure(feature: BacklogFeature, failures: List<FailureDetail>) {
+        info("Verification failed.")
+        val prompt = PromptGenerator.generateFailurePrompt(feature, failures)
+        listener.onPromptGenerated(prompt)
+        handoffPrompt(prompt)
+
+        if (settings.showNotificationAfterHandoff) {
+            Messages.showInfoMessage(project, "Verification failed. Failure prompt prepared. Paste it into your AI tool to fix the issues.", "Feature Orchestrator")
+        }
+        setState(OrchestratorState.AWAITING_AI)
     }
 
     private fun handoffPrompt(prompt: String) {
@@ -335,5 +366,26 @@ class OrchestratorController(private val project: Project, private val listener:
 
     override fun dispose() {
         stopMonitoring()
+    }
+}
+
+private class ManualVerificationDialog(project: Project, val criteria: List<AcceptanceCriterion.ManualVerification>) : DialogWrapper(project) {
+    private val checkboxes = criteria.map { JBCheckBox(it.description) }
+
+    init {
+        title = "Manual Verification"
+        init()
+    }
+
+    override fun createCenterPanel(): JComponent {
+        val panel = JPanel()
+        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+        panel.add(JLabel("Please confirm the following manual criteria are fulfilled:"))
+        checkboxes.forEach { panel.add(it) }
+        return panel
+    }
+
+    fun getUnfulfilledCriteria(): List<AcceptanceCriterion.ManualVerification> {
+        return criteria.zip(checkboxes).filter { !it.second.isSelected }.map { it.first }
     }
 }
