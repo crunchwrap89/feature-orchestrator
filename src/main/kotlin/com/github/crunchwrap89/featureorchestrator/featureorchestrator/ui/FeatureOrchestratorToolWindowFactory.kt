@@ -12,6 +12,8 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
+import com.intellij.ui.IdeBorderFactory
+import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Dimension
 import javax.swing.JButton
@@ -39,7 +41,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
     }
     private val prevButton = JButton("<").apply { isEnabled = false }
     private val nextButton = JButton(">").apply { isEnabled = false }
-    private val runButton = JButton("▶ Implement Feature")
+    private val runButton = JButton("▶ Generate prompt")
     private val editBacklogButton = JButton("Edit Backlog").apply { isVisible = false }
     private val verifyButton = JButton("Verify implementation").apply { isEnabled = false }
     private val logArea = JTextArea().apply {
@@ -49,7 +51,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         preferredSize = Dimension(100, 200)
     }
     private val changesLabel = JBLabel("Changed files: 0")
-    private val promptPreview = JTextArea().apply {
+    private val acceptanceCriteriaArea = JTextArea().apply {
         isEditable = false
         lineWrap = true
         wrapStyleWord = true
@@ -61,16 +63,26 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
 
     init {
         val featureCard = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            border = javax.swing.BorderFactory.createTitledBorder("Select feature")
+            border = IdeBorderFactory.createRoundedBorder()
+
+            val titlePanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+                border = JBUI.Borders.empty(5)
+                add(JBLabel("Select feature").apply { font = JBUI.Fonts.label().asBold() }, BorderLayout.WEST)
+            }
+            add(titlePanel, BorderLayout.NORTH)
+
+            val contentPanel = JBPanel<JBPanel<*>>(BorderLayout())
             val navPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
                 add(prevButton, BorderLayout.WEST)
                 add(featureName, BorderLayout.CENTER)
                 add(nextButton, BorderLayout.EAST)
             }
-            add(navPanel, BorderLayout.NORTH)
+            contentPanel.add(navPanel, BorderLayout.NORTH)
             val scrollPane = JBScrollPane(featureDesc)
-            scrollPane.border = javax.swing.BorderFactory.createEmptyBorder(4, 4, 4, 4)
-            add(scrollPane, BorderLayout.CENTER)
+            scrollPane.border = JBUI.Borders.empty(4)
+            contentPanel.add(scrollPane, BorderLayout.CENTER)
+
+            add(contentPanel, BorderLayout.CENTER)
         }
 
         val buttons = JBPanel<JBPanel<*>>().apply {
@@ -79,12 +91,22 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             add(verifyButton)
         }
 
+        val criteriaPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+            border = IdeBorderFactory.createRoundedBorder()
+            val titlePanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
+                border = JBUI.Borders.empty(5)
+                add(JBLabel("Acceptance Criteria").apply { font = JBUI.Fonts.label().asBold() }, BorderLayout.WEST)
+            }
+            add(titlePanel, BorderLayout.NORTH)
+            add(JBScrollPane(acceptanceCriteriaArea), BorderLayout.CENTER)
+        }
+
         val logPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            border = javax.swing.BorderFactory.createEtchedBorder()
+            border = IdeBorderFactory.createRoundedBorder()
 
             val logHeader = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-                border = javax.swing.BorderFactory.createEmptyBorder(2, 5, 2, 5)
-                add(JBLabel("Execution Log"), BorderLayout.WEST)
+                border = JBUI.Borders.empty(5)
+                add(JBLabel("Execution Log").apply { font = JBUI.Fonts.label().asBold() }, BorderLayout.WEST)
                 add(JBPanel<JBPanel<*>>().apply {
                     add(statusIndicator)
                     add(statusLabel)
@@ -95,11 +117,16 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             add(JBScrollPane(logArea), BorderLayout.CENTER)
         }
 
-        add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            add(featureCard, BorderLayout.NORTH)
-            add(buttons, BorderLayout.CENTER)
-        }, BorderLayout.CENTER)
-        add(logPanel, BorderLayout.SOUTH)
+        val topContainer = JBPanel<JBPanel<*>>(BorderLayout())
+        val controlsContainer = JBPanel<JBPanel<*>>(BorderLayout())
+        controlsContainer.add(featureCard, BorderLayout.NORTH)
+        controlsContainer.add(buttons, BorderLayout.CENTER)
+        controlsContainer.add(criteriaPanel, BorderLayout.SOUTH)
+
+        topContainer.add(controlsContainer, BorderLayout.NORTH)
+
+        add(topContainer, BorderLayout.NORTH)
+        add(logPanel, BorderLayout.CENTER)
 
         prevButton.addActionListener { controller.previousFeature() }
         nextButton.addActionListener { controller.nextFeature() }
@@ -124,7 +151,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             OrchestratorState.FAILED -> statusIndicator.foreground = JBColor.RED
         }
         verifyButton.isEnabled = (state == OrchestratorState.AWAITING_AI || state == OrchestratorState.HANDOFF || state == OrchestratorState.FAILED)
-        runButton.isEnabled = (state == OrchestratorState.IDLE || state == OrchestratorState.FAILED || state == OrchestratorState.COMPLETED)
+        runButton.isEnabled = (state == OrchestratorState.IDLE || state == OrchestratorState.FAILED || state == OrchestratorState.COMPLETED || state == OrchestratorState.AWAITING_AI)
     }
 
     override fun onLog(message: String) {
@@ -137,7 +164,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
     }
 
     override fun onClearPrompt() {
-        promptPreview.text = ""
+        // No-op
     }
 
     override fun onBacklogStatusChanged(status: BacklogStatus) {
@@ -146,6 +173,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             BacklogStatus.MISSING -> {
                 featureName.text = "Backlog Missing"
                 featureDesc.text = "No backlog.md found in project root."
+                acceptanceCriteriaArea.text = ""
                 runButton.isVisible = false
                 editBacklogButton.isVisible = true
                 editBacklogButton.text = "Create Backlog"
@@ -155,6 +183,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             BacklogStatus.NO_FEATURES -> {
                 featureName.text = "No Features"
                 featureDesc.text = "No unchecked features found in backlog.md."
+                acceptanceCriteriaArea.text = ""
                 runButton.isVisible = false
                 editBacklogButton.isVisible = true
                 editBacklogButton.text = "Add Feature"
@@ -177,6 +206,14 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         if (lastStatus != BacklogStatus.OK) return
         featureName.text = feature?.let { "${it.name}" } ?: "No feature selected"
         featureDesc.text = feature?.description?.let { truncate(it, 600) } ?: ""
+
+        val criteriaText = feature?.acceptanceCriteria?.joinToString("\n") { c ->
+            when (c) {
+                is com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion.FileExists -> "- File exists: ${c.relativePath}"
+                is com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion.CommandSucceeds -> "- Command succeeds: ${c.command}"
+            }
+        } ?: ""
+        acceptanceCriteriaArea.text = criteriaText
     }
 
     override fun onChangeCountChanged(count: Int) {
@@ -184,7 +221,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
     }
 
     override fun onPromptGenerated(prompt: String) {
-        promptPreview.text = prompt
+
     }
 
     override fun onCompletion(success: Boolean) {

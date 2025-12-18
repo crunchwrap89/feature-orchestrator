@@ -148,7 +148,7 @@ class OrchestratorController(private val project: Project, private val listener:
     }
 
     fun runNextFeature() {
-        require(state == OrchestratorState.IDLE || state == OrchestratorState.FAILED || state == OrchestratorState.COMPLETED) { "Invalid state" }
+        require(state == OrchestratorState.IDLE || state == OrchestratorState.FAILED || state == OrchestratorState.COMPLETED || state == OrchestratorState.AWAITING_AI) { "Invalid state" }
 
         // Re-validate to ensure list is up to date, but try to keep selection if possible
         val oldFeatureName = if (availableFeatures.isNotEmpty()) availableFeatures[currentFeatureIndex].name else null
@@ -177,6 +177,13 @@ class OrchestratorController(private val project: Project, private val listener:
         if (settings.showNotificationAfterHandoff) {
             Messages.showInfoMessage(project, "Prompt prepared. Paste it into your AI tool (Copilot Chat or JetBrains AI Assistant).", "Feature Orchestrator")
         }
+
+        // If we are already awaiting AI for the same feature, just re-handoff and return
+        if (state == OrchestratorState.AWAITING_AI && session?.feature?.name == feature.name) {
+            info("Prompt copied to clipboard again.")
+            return
+        }
+
         setState(OrchestratorState.HANDOFF)
         startMonitoring(feature)
         setState(OrchestratorState.AWAITING_AI)
@@ -212,7 +219,6 @@ class OrchestratorController(private val project: Project, private val listener:
                                 Messages.showInfoMessage(project, "Verification failed. Failure prompt prepared. Paste it into your AI tool to fix the issues.", "Feature Orchestrator")
                             }
                             setState(OrchestratorState.AWAITING_AI)
-                            info("Paste the new prompt to your AI Agent and Verify implementation when it has finished.")
                         }
                     }
                 } catch (e: Exception) {
