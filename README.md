@@ -75,7 +75,7 @@ It’s a **Feature orchestrator**.
 
 - Using the IDE built-in plugin system:
 
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "a-webstorm-plugin"</kbd> >
+  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "Feature Orchestrator"</kbd> >
   <kbd>Install</kbd>
 
 - Using JetBrains Marketplace:
@@ -87,7 +87,7 @@ It’s a **Feature orchestrator**.
 
 - Manually:
 
-  Download the [latest release](https://github.com/crunchwrap89/a-webstorm-plugin/releases/latest) and install it manually using
+  Download the [latest release](https://github.com/crunchwrap89/feature-orchestrator/releases/latest) and install it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
 
 
