@@ -4,6 +4,7 @@ import com.github.crunchwrap89.featureorchestrator.featureorchestrator.core.Orch
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.BacklogFeature
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.BacklogStatus
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.OrchestratorState
+import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -14,8 +15,10 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.content.ContentFactory
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.util.ui.JBUI
+import com.intellij.ui.OnePixelSplitter
 import java.awt.BorderLayout
 import java.awt.Dimension
+import java.awt.FlowLayout
 import javax.swing.JButton
 import javax.swing.JTextArea
 
@@ -37,7 +40,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         wrapStyleWord = true
         background = null
         border = null
-        rows = 5
+        rows = 10
     }
     private val prevButton = JButton("<").apply { isEnabled = false }
     private val nextButton = JButton(">").apply { isEnabled = false }
@@ -48,14 +51,14 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         isEditable = false
         lineWrap = true
         wrapStyleWord = true
-        preferredSize = Dimension(100, 200)
+        rows = 10
     }
     private val changesLabel = JBLabel("Changed files: 0")
     private val acceptanceCriteriaArea = JTextArea().apply {
         isEditable = false
         lineWrap = true
         wrapStyleWord = true
-        rows = 8
+        rows = 10
     }
 
     private val controller = OrchestratorController(project, this)
@@ -67,7 +70,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
 
             val titlePanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
                 border = JBUI.Borders.empty(5)
-                add(JBLabel("Select feature").apply { font = JBUI.Fonts.label().asBold() }, BorderLayout.WEST)
+                add(JBLabel("Feature").apply { font = JBUI.Fonts.label().asBold() }, BorderLayout.WEST)
             }
             add(titlePanel, BorderLayout.NORTH)
 
@@ -79,13 +82,45 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             }
             contentPanel.add(navPanel, BorderLayout.NORTH)
             val scrollPane = JBScrollPane(featureDesc)
-            scrollPane.border = JBUI.Borders.empty(4)
             contentPanel.add(scrollPane, BorderLayout.CENTER)
 
             add(contentPanel, BorderLayout.CENTER)
         }
 
-        val buttons = JBPanel<JBPanel<*>>().apply {
+        val buttons = object : JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.CENTER)) {
+            override fun getPreferredSize(): Dimension {
+                val d = super.getPreferredSize()
+                val parent = parent
+                if (parent != null) {
+                    val width = parent.width
+                    if (width > 0) {
+                        // Calculate height required for this width
+                        val layout = layout as FlowLayout
+                        var rowHeight = 0
+                        var totalHeight = layout.vgap
+                        var rowWidth = layout.hgap
+
+                        for (i in 0 until componentCount) {
+                            val comp = getComponent(i)
+                            if (comp.isVisible) {
+                                val dComp = comp.preferredSize
+                                if (rowWidth + dComp.width > width) {
+                                    totalHeight += rowHeight + layout.vgap
+                                    rowWidth = layout.hgap
+                                    rowHeight = 0
+                                }
+                                rowWidth += dComp.width + layout.hgap
+                                rowHeight = maxOf(rowHeight, dComp.height)
+                            }
+                        }
+                        totalHeight += rowHeight + layout.vgap
+                        d.height = totalHeight
+                        d.width = width // Constrain width to parent
+                    }
+                }
+                return d
+            }
+        }.apply {
             add(runButton)
             add(editBacklogButton)
             add(verifyButton)
@@ -117,16 +152,17 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             add(JBScrollPane(logArea), BorderLayout.CENTER)
         }
 
-        val topContainer = JBPanel<JBPanel<*>>(BorderLayout())
-        val controlsContainer = JBPanel<JBPanel<*>>(BorderLayout())
-        controlsContainer.add(featureCard, BorderLayout.NORTH)
-        controlsContainer.add(buttons, BorderLayout.CENTER)
-        controlsContainer.add(criteriaPanel, BorderLayout.SOUTH)
+        val topPanel = JBPanel<JBPanel<*>>(BorderLayout())
+        topPanel.add(featureCard, BorderLayout.NORTH)
+        topPanel.add(criteriaPanel, BorderLayout.CENTER)
+        topPanel.add(buttons, BorderLayout.SOUTH)
 
-        topContainer.add(controlsContainer, BorderLayout.NORTH)
+        val splitter = OnePixelSplitter(true)
+        splitter.proportion = 0.8f
+        splitter.firstComponent = topPanel
+        splitter.secondComponent = logPanel
 
-        add(topContainer, BorderLayout.NORTH)
-        add(logPanel, BorderLayout.CENTER)
+        add(splitter, BorderLayout.CENTER)
 
         prevButton.addActionListener { controller.previousFeature() }
         nextButton.addActionListener { controller.nextFeature() }
@@ -207,15 +243,39 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         featureName.text = feature?.let { "${it.name}" } ?: "No feature selected"
         featureDesc.text = feature?.description?.let { truncate(it, 600) } ?: ""
 
-        val criteriaText = feature?.acceptanceCriteria?.joinToString("\n") { c ->
+        if (feature == null) {
+            acceptanceCriteriaArea.text = ""
+            return
+        }
+
+        val automatic = mutableListOf<String>()
+        val manual = mutableListOf<String>()
+
+        feature.acceptanceCriteria.forEach { c ->
             when (c) {
-                is com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion.FileExists -> "- File exists: ${c.relativePath}"
-                is com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion.CommandSucceeds -> "- Command succeeds: ${c.command}"
-                is com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion.NoTestsFail -> "- No tests fail"
-                is com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion.ManualVerification -> "- Manual check: ${c.description}"
+                is AcceptanceCriterion.FileExists ->
+                    automatic.add("- File exists: ${c.relativePath}")
+                is AcceptanceCriterion.CommandSucceeds ->
+                    automatic.add("- Command succeeds: ${c.command}")
+                is AcceptanceCriterion.NoTestsFail ->
+                    automatic.add("- No tests fail")
+                is AcceptanceCriterion.ManualVerification ->
+                    manual.add("- ${c.description}")
             }
-        } ?: ""
-        acceptanceCriteriaArea.text = criteriaText
+        }
+
+        val sb = StringBuilder()
+        if (automatic.isNotEmpty()) {
+            sb.append("Automatic checks:\n")
+            automatic.forEach { sb.append(it).append("\n") }
+        }
+        if (manual.isNotEmpty()) {
+            if (sb.isNotEmpty()) sb.append("\n")
+            sb.append("Manual checks:\n")
+            manual.forEach { sb.append(it).append("\n") }
+        }
+
+        acceptanceCriteriaArea.text = sb.toString().trimEnd()
     }
 
     override fun onChangeCountChanged(count: Int) {
