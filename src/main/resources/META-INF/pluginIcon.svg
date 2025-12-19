@@ -1,0 +1,30 @@
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Orange Logo</title>
+    <defs>
+        <!-- Radial gradient for the orange body to give it depth -->
+        <radialGradient cx="35%" cy="35%" r="60%" fx="35%" fy="35%" id="orangeGradient">
+            <stop stop-color="#FFC107" offset="0%"/> <!-- Lighter highlight area -->
+            <stop stop-color="#FF9800" offset="50%"/> <!-- Main orange color -->
+            <stop stop-color="#F57C00" offset="100%"/> <!-- Darker shadow edge -->
+        </radialGradient>
+        <!-- Linear gradient for the leaf -->
+        <linearGradient x1="0%" y1="50%" x2="100%" y2="50%" id="leafGradient">
+            <stop stop-color="#8BC34A" offset="0%"/>
+            <stop stop-color="#4CAF50" offset="100%"/>
+        </linearGradient>
+    </defs>
+    <g id="Orange-Icon" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Main Orange Body -->
+        <!-- Centered slightly low (cy=22) to make room for the leaf on top -->
+        <circle id="Orange-Sphere" fill="url(#orangeGradient)" cx="20" cy="22" r="17"></circle>
+        
+        <!-- Subtle highlight reflection for juiciness -->
+        <ellipse id="Highlight" fill="#FFFFFF" opacity="0.3" cx="14.5" cy="16.5" rx="4.5" ry="2.5" transform="translate(14.500000, 16.500000) rotate(-30.000000) translate(-14.500000, -16.500000) "></ellipse>
+        
+        <!-- Stem -->
+        <path d="M19,5 C19.5522847,5 20,5.44771525 20,6 L20,8 L19,9 L18,8 L18,6 C18,5.44771525 18.4477153,5 19,5 Z" id="Stem" fill="#795548"></path>
+        
+        <!-- Leaf -->
+        <path d="M20,8 C20,8 26.5,6.5 30,10 C33.5,13.5 31,19 31,19 C31,19 25.5,18.5 22,15 C18.5,11.5 20,8 20,8 Z" id="Leaf" fill="url(#leafGradient)"></path>
+    </g>
+</svg>
