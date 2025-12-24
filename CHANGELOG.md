@@ -1,6 +1,13 @@
 # Feature Orchestrator Changelog
 
 ## [Unreleased]
+### Added
+- Improved default feature template
+- add the ability to add, edit and remove feature from the backlog.
+
+## [1.1.7] - 2025-12-20 
+### Fixed
+- Fixed issue with copilot chat window not opening
 
 ## [1.1.6] - 2025-12-19
 

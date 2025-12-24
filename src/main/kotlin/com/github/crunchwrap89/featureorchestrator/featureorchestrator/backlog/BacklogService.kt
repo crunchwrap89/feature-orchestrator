@@ -27,28 +27,42 @@ class BacklogService(private val project: Project) {
         private val TEMPLATE_FEATURE = """
 ---
 ## Feature name
-New About Page
+New Landing Page
 
 ### Description
-Add a new "About" page to the website that explains what this website is for.
+Add a new "Landing" page for: kustdrönare.se
+The main purpose of the website is to inform visitors about our consulting services where eyes are needed below the water surface or from the sky.
+
+We target industries such as aquaculture, environmental monitoring, infrastructure inspection, and maritime research.
+
+The landing page should effectively communicate our value proposition, showcase our expertise, and provide clear calls to action for potential clients to get in touch or learn more about our services.
+We also sell drones and underwater ROVs, so there should be a section highlighting our products and strategic partnerships.
 
 ### Requirements
-- Page should be accessible at `/about`
-- Use existing layout components
-- Match typography, spacing, and color scheme with the rest of the site
-- Be responsive on mobile and desktop
-- Add styling for both dark and light mode.
-
-### Out of Scope
-- Do not add any animations or low performance effects
-- Do not add any new images, icons, or media assets
+- The page should be accessible at `/`.
+- Include the following sections:
+  - Header with site title, tagline, and navigation menu  
+  - Hero section to capture users’ interest with primary CTAs  
+  - About section  
+  - Product highlights with a link to the product catalog  
+  - Services overview  
+  - Client testimonials  
+  - Contact form or contact information  
+  - Footer with links to the privacy policy, terms of service, and social media profiles  
+- Add SEO meta-tags for title, description, and keywords.
+- Ensure fast load times and optimized performance.
+- Must be responsive on both mobile and desktop devices.
+- Use a modern design with a clean layout, consistent color scheme, and readable typography.
+- Use only the latest version and styling patterns for Tailwind CSS.
+- Define base styling in `main.css` for common elements (headings, paragraphs, etc.).
+- Ensure full responsiveness across devices.
 
 ### Acceptance Criteria
-- File exists: ./app/pages/about.vue
+- File exists: ./app/pages/index.vue
 - Command succeeds: yarn build
-- Command succeeds: yarn test
-- Route `/about` renders without errors
-- Visual style matches existing pages
+- Command succeeds: yarn test:no-watch
+- Route `/` renders without errors or warnings in the console
+- Visual styling is up to modern standards and matches design requirements
 ---
 """.trimIndent()
     }
@@ -106,6 +120,15 @@ Add a new "About" page to the website that explains what this website is for.
             } catch (e: Exception) {
                 log.warn("Failed to append to backlog.md", e)
             }
+        })
+    }
+
+    fun removeFeature(feature: BacklogFeature) {
+        val vf = backlogFile() ?: return
+        val doc = FileDocumentManager.getInstance().getDocument(vf) ?: return
+        WriteCommandAction.runWriteCommandAction(project, "Remove Feature", null, Runnable {
+            removeFeatureBlock(doc.text, feature.rawBlock, doc)
+            FileDocumentManager.getInstance().saveDocument(doc)
         })
     }
 
