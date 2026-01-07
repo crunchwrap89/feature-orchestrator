@@ -145,17 +145,42 @@ class OrchestratorController(private val project: Project, private val listener:
         }
     }
 
-    fun addFeature() {
+    fun addEmptyFeature() {
+        backlogService.appendEmptyFeatureToBacklog()
+        navigateToNewFeature()
+        validateBacklog()
+    }
+
+    fun addTemplateFeature() {
         backlogService.appendTemplateToBacklog()
+        navigateToNewFeature()
+        validateBacklog()
+    }
+
+    private fun navigateToNewFeature() {
         val file = backlogService.backlogFile()
         if (file != null) {
             val editors = FileEditorManager.getInstance(project).openFile(file, true)
             val textEditor = editors.firstOrNull { it is com.intellij.openapi.fileEditor.TextEditor } as? com.intellij.openapi.fileEditor.TextEditor
             textEditor?.editor?.let { editor ->
-                editor.scrollingModel.scrollTo(com.intellij.openapi.editor.LogicalPosition(editor.document.lineCount - 1, 0), com.intellij.openapi.editor.ScrollType.CENTER)
+                val text = editor.document.text
+                val lastHeaderIndex = text.lastIndexOf("## Feature name")
+                if (lastHeaderIndex != -1) {
+                    val lineNumber = editor.document.getLineNumber(lastHeaderIndex)
+                    // We want to go to the line below ## Feature name.
+                    // The feature name line is lineNumber.
+                    // If content follows immediately, it might be lineNumber + 1
+                    var targetLine = lineNumber + 1
+                    if (targetLine < editor.document.lineCount) {
+                        editor.caretModel.moveToLogicalPosition(com.intellij.openapi.editor.LogicalPosition(targetLine, 0))
+                        editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.CENTER)
+                    }
+                } else {
+                    // Fallback to end of file
+                    editor.scrollingModel.scrollTo(com.intellij.openapi.editor.LogicalPosition(editor.document.lineCount - 1, 0), com.intellij.openapi.editor.ScrollType.CENTER)
+                }
             }
         }
-        validateBacklog()
     }
 
     fun editFeature() {
@@ -471,3 +496,4 @@ private class ManualVerificationDialog(project: Project, val criteria: List<Acce
         return criteria.zip(checkboxes).filter { !it.second.isSelected }.map { it.first }
     }
 }
+

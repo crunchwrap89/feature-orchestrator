@@ -24,6 +24,9 @@ import java.awt.Dimension
 import java.awt.FlowLayout
 import javax.swing.JButton
 import javax.swing.JTextArea
+import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.ui.popup.PopupStep
+import com.intellij.openapi.ui.popup.util.BaseListPopupStep
 
 class FeatureOrchestratorToolWindowFactory : ToolWindowFactory {
     override suspend fun isApplicableAsync(project: Project): Boolean {
@@ -73,7 +76,22 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
 
     private val addFeatureButton = JButton("+").apply {
         toolTipText = "Add Feature"
-        addActionListener { controller.addFeature() }
+        addActionListener {
+            val popup = JBPopupFactory.getInstance().createListPopup(
+                object : BaseListPopupStep<String>("Add Feature", listOf("Empty Feature", "Template Feature")) {
+                    override fun onChosen(selectedValue: String?, finalChoice: Boolean): PopupStep<*>? {
+                        if (finalChoice) {
+                            when (selectedValue) {
+                                "Empty Feature" -> controller.addEmptyFeature()
+                                "Template Feature" -> controller.addTemplateFeature()
+                            }
+                        }
+                        return PopupStep.FINAL_CHOICE
+                    }
+                }
+            )
+            popup.showUnderneathOf(this)
+        }
     }
     private val editFeatureButton = JButton("✎").apply {
         toolTipText = "Edit Feature"

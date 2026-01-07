@@ -26,15 +26,26 @@ object BacklogParser {
                 i++
             }
 
-            if (i >= lines.size || !nameRegex.matches(lines[i])) {
-                warnings += warning(blockStart, "Missing feature name line (e.g. 'Feature Name') after '## Feature name'. Skipping block.")
-                i++
-                continue
+            var name = "Untitled Feature"
+            var checked = false
+
+            // Check if line is a name or a new section/feature/separator
+            if (i < lines.size) {
+                if (!featureHeaderRegex.matches(lines[i]) &&
+                    !sectionHeaderRegex.matches(lines[i]) &&
+                    !separatorRegex.matches(lines[i])) {
+
+                    if (nameRegex.matches(lines[i])) {
+                        val nameMatch = nameRegex.matchEntire(lines[i])!!
+                        checked = nameMatch.groupValues[1].equals("x", ignoreCase = true)
+                        name = nameMatch.groupValues[2].trim()
+                        i++
+                    } else {
+                        warnings += warning(blockStart, "Invalid feature name line. Using default.")
+                        i++
+                    }
+                }
             }
-            val nameMatch = nameRegex.matchEntire(lines[i])!!
-            val checked = nameMatch.groupValues[1].equals("x", ignoreCase = true)
-            val name = nameMatch.groupValues[2].trim()
-            i++
 
             // Skip blank lines
             while (i < lines.size && lines[i].isBlank()) {
@@ -56,9 +67,7 @@ object BacklogParser {
             }
             val description = descriptionBuilder.toString().trim()
             if (description.isBlank()) {
-                warnings += warning(blockStart, "Empty description for feature '$name'. Skipping.")
-                i = skipToNextFeature(lines, i)
-                continue
+                // Allow empty description for templates
             }
 
             val optionalSections = mutableMapOf<Section, String>()

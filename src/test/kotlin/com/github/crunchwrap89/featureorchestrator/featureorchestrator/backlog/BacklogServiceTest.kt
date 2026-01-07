@@ -46,6 +46,20 @@ class BacklogServiceTest : BasePlatformTestCase() {
         assertTrue(content.contains("New Landing Page"))
     }
 
+    fun `test append empty feature to backlog`() {
+        myFixture.addFileToProject("BACKLOG.md", "# Backlog\n")
+
+        service.appendEmptyFeatureToBacklog()
+
+        val file = myFixture.findFileInTempDir("BACKLOG.md")
+        val content = String(file.contentsToByteArray())
+
+        assertTrue(content.contains("# Backlog"))
+        assertTrue(content.contains("## Feature name"))
+        assertTrue(content.contains("### Description"))
+        assertFalse(content.contains("New Landing Page"))
+    }
+
     fun `test mark completed check off`() {
         val backlogContent = """
             # Backlog

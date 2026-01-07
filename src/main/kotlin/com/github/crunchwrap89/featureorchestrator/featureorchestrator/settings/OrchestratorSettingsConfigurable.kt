@@ -4,7 +4,9 @@ import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.FormBuilder
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -43,6 +45,10 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
     private val showNotificationCheckBox = JBCheckBox("Show notification after prompt generation/verification failure")
     private val showAcceptanceCriteriaCheckBox = JBCheckBox("Show Acceptance Criteria preview window")
     private val commandTimeoutField = JBTextField()
+    private val featureTemplateArea = JBTextArea(10, 50).apply {
+        lineWrap = true
+        wrapStyleWord = true
+    }
 
     override fun getDisplayName(): String = "Feature Orchestrator"
 
@@ -53,6 +59,8 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
             .addComponent(showNotificationCheckBox)
             .addComponent(showAcceptanceCriteriaCheckBox)
             .addLabeledComponent(JBLabel("Command timeout (seconds):"), commandTimeoutField)
+            .addSeparator()
+            .addLabeledComponent(JBLabel("New feature template:"), JBScrollPane(featureTemplateArea))
             .addComponentFillVertically(JPanel(), 0)
             .panel
         return settingsPanel!!
@@ -66,6 +74,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
         modified = modified or (showAcceptanceCriteriaCheckBox.isSelected != settings.showAcceptanceCriteria)
         val timeout = commandTimeoutField.text.toIntOrNull() ?: 600
         modified = modified or (timeout != settings.commandTimeoutSeconds)
+        modified = modified or (featureTemplateArea.text != settings.featureTemplate)
         return modified
     }
 
@@ -76,6 +85,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
         settings.showNotificationAfterHandoff = showNotificationCheckBox.isSelected
         settings.showAcceptanceCriteria = showAcceptanceCriteriaCheckBox.isSelected
         settings.commandTimeoutSeconds = commandTimeoutField.text.toIntOrNull() ?: 600
+        settings.featureTemplate = featureTemplateArea.text
     }
 
     override fun reset() {
@@ -85,6 +95,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
         showNotificationCheckBox.isSelected = settings.showNotificationAfterHandoff
         showAcceptanceCriteriaCheckBox.isSelected = settings.showAcceptanceCriteria
         commandTimeoutField.text = settings.commandTimeoutSeconds.toString()
+        featureTemplateArea.text = settings.featureTemplate
     }
 
     override fun disposeUIResources() {

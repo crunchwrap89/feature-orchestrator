@@ -2,8 +2,15 @@
 
 ## [Unreleased]
 
-### Fixed
+### Features
 - Add a button for mark as completed
+- Add ability to toggle preview acceptance criteria
+- Add ability to add empty feature or configured template feature.
+- Add ability to preview and cycle through features that are missing information. (for example empty templates)
+- Start at Feature name with cursor when adding new feature
+
+### Fixed
+- Fixed bug were some buttons were not visible at smaller widths.
 
 ## [1.1.8] - 2025-12-24
 

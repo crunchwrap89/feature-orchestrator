@@ -3,8 +3,10 @@ package com.github.crunchwrap89.featureorchestrator.featureorchestrator.backlog
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.Backlog
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.BacklogFeature
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.settings.CompletionBehavior
+import com.github.crunchwrap89.featureorchestrator.featureorchestrator.settings.OrchestratorSettings
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
@@ -19,9 +21,6 @@ class BacklogService(private val project: Project) {
     companion object {
         private val BACKLOG_HEADER = """
 # Backlog
-- Wrap features in `---` separators. 
-- Feature name and Description is required, other fields are optional but recommended.
-- Acceptance Criteria will be used to verify completion, some automatically, others may require manual verification.
 """.trimIndent()
 
         private val TEMPLATE_FEATURE = """
@@ -65,6 +64,16 @@ We also sell drones and underwater ROVs, so there should be a section highlighti
 - Visual styling is up to modern standards and matches design requirements
 ---
 """.trimIndent()
+
+        private val EMPTY_FEATURE = """
+---
+## Feature name
+
+
+### Description
+
+---
+""".trimIndent()
     }
 
     fun backlogFile(): VirtualFile? {
@@ -94,12 +103,13 @@ We also sell drones and underwater ROVs, so there should be a section highlighti
     fun createTemplateBacklog() {
         val basePath = project.basePath ?: return
         val baseDir = LocalFileSystem.getInstance().findFileByPath(basePath) ?: return
+        val template = project.service<OrchestratorSettings>().featureTemplate
 
         WriteCommandAction.runWriteCommandAction(project, "Create Backlog Template", null, {
             try {
                 val file = baseDir.createChildData(this, "BACKLOG.md")
                 val doc = FileDocumentManager.getInstance().getDocument(file)
-                doc?.setText(BACKLOG_HEADER + "\n\n" + TEMPLATE_FEATURE)
+                doc?.setText(BACKLOG_HEADER + "\n\n" + template)
                 FileDocumentManager.getInstance().saveDocument(doc!!)
             } catch (e: Exception) {
                 log.warn("Failed to create BACKLOG.md", e)
@@ -108,6 +118,15 @@ We also sell drones and underwater ROVs, so there should be a section highlighti
     }
 
     fun appendTemplateToBacklog() {
+        val template = project.service<OrchestratorSettings>().featureTemplate
+        appendContentToBacklog(template)
+    }
+
+    fun appendEmptyFeatureToBacklog() {
+        appendContentToBacklog(EMPTY_FEATURE)
+    }
+
+    private fun appendContentToBacklog(content: String) {
         val file = backlogFile() ?: return
         val doc = FileDocumentManager.getInstance().getDocument(file) ?: return
 
@@ -115,7 +134,7 @@ We also sell drones and underwater ROVs, so there should be a section highlighti
             try {
                 val text = doc.text
                 val prefix = if (text.isNotEmpty() && !text.endsWith("\n")) "\n\n" else if (text.isNotEmpty()) "\n" else ""
-                doc.setText(text + prefix + TEMPLATE_FEATURE)
+                doc.setText(text + prefix + content)
                 FileDocumentManager.getInstance().saveDocument(doc)
             } catch (e: Exception) {
                 log.warn("Failed to append to backlog.md", e)

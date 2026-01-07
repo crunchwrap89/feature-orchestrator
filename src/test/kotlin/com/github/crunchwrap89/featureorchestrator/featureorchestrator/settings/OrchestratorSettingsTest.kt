@@ -20,6 +20,7 @@ class OrchestratorSettingsTest : BasePlatformTestCase() {
         assertTrue(settings.showNotificationAfterHandoff)
         assertEquals(600, settings.commandTimeoutSeconds)
         assertFalse(settings.showAcceptanceCriteria)
+        assertTrue(settings.featureTemplate.contains("## Feature name"))
     }
 
     fun `test persistence`() {
@@ -30,6 +31,7 @@ class OrchestratorSettingsTest : BasePlatformTestCase() {
         settings.showNotificationAfterHandoff = false
         settings.commandTimeoutSeconds = 300
         settings.showAcceptanceCriteria = true
+        settings.featureTemplate = "New Template"
 
         val state = settings.state
         assertEquals(CompletionBehavior.CHECK_OFF, state.completionBehavior)
@@ -37,6 +39,7 @@ class OrchestratorSettingsTest : BasePlatformTestCase() {
         assertFalse(state.showNotificationAfterHandoff)
         assertEquals(300, state.commandTimeoutSeconds)
         assertTrue(state.showAcceptanceCriteria)
+        assertEquals("New Template", state.featureTemplate)
 
         // Simulate reload
         val newSettings = OrchestratorSettings(project)
@@ -47,5 +50,6 @@ class OrchestratorSettingsTest : BasePlatformTestCase() {
         assertFalse(newSettings.showNotificationAfterHandoff)
         assertEquals(300, newSettings.commandTimeoutSeconds)
         assertTrue(newSettings.showAcceptanceCriteria)
+        assertEquals("New Template", newSettings.featureTemplate)
     }
 }
