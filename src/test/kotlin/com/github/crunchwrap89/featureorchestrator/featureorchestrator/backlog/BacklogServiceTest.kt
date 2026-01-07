@@ -4,6 +4,7 @@ import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.Bac
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.settings.CompletionBehavior
 import com.intellij.openapi.components.service
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.ui.UIUtil
 
 class BacklogServiceTest : BasePlatformTestCase() {
 
@@ -17,7 +18,9 @@ class BacklogServiceTest : BasePlatformTestCase() {
     fun `test create template backlog`() {
         service.createTemplateBacklog()
 
-        Thread.sleep(500) // Wait for write action
+        // Thread.sleep(500) // Wait for write action
+        UIUtil.dispatchAllInvocationEvents()
+
         val basePath = myFixture.project.basePath
         val baseDir = com.intellij.openapi.vfs.LocalFileSystem.getInstance().findFileByPath(basePath!!)
         baseDir?.refresh(false, true)
@@ -40,7 +43,7 @@ class BacklogServiceTest : BasePlatformTestCase() {
 
         assertTrue(content.contains("# Backlog"))
         assertTrue(content.contains("## Feature name"))
-        assertTrue(content.contains("New About Page"))
+        assertTrue(content.contains("New Landing Page"))
     }
 
     fun `test mark completed check off`() {

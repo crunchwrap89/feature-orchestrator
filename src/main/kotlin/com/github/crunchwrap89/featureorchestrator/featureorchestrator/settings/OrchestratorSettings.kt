@@ -15,6 +15,7 @@ data class OrchestratorSettingsState(
     var promptHandoffBehavior: PromptHandoffBehavior = PromptHandoffBehavior.COPY_TO_CLIPBOARD,
     var showNotificationAfterHandoff: Boolean = true,
     var commandTimeoutSeconds: Int = 600,
+    var showAcceptanceCriteria: Boolean = false,
 )
 
 @Service(Service.Level.PROJECT)
@@ -43,4 +44,8 @@ class OrchestratorSettings(private val project: Project) : PersistentStateCompon
     var commandTimeoutSeconds: Int
         get() = state.commandTimeoutSeconds
         set(value) { state.commandTimeoutSeconds = value }
+
+    var showAcceptanceCriteria: Boolean
+        get() = state.showAcceptanceCriteria
+        set(value) { state.showAcceptanceCriteria = value }
 }

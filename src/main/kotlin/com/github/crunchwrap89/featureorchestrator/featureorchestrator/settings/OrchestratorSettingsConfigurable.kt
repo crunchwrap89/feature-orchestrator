@@ -41,6 +41,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
         }
     }
     private val showNotificationCheckBox = JBCheckBox("Show notification after prompt generation/verification failure")
+    private val showAcceptanceCriteriaCheckBox = JBCheckBox("Show Acceptance Criteria preview window")
     private val commandTimeoutField = JBTextField()
 
     override fun getDisplayName(): String = "Feature Orchestrator"
@@ -50,6 +51,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
             .addLabeledComponent(JBLabel("Completion behavior:"), completionBehaviorComboBox)
             .addLabeledComponent(JBLabel("Prompt handoff:"), promptHandoffComboBox)
             .addComponent(showNotificationCheckBox)
+            .addComponent(showAcceptanceCriteriaCheckBox)
             .addLabeledComponent(JBLabel("Command timeout (seconds):"), commandTimeoutField)
             .addComponentFillVertically(JPanel(), 0)
             .panel
@@ -61,6 +63,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
         var modified = completionBehaviorComboBox.selectedItem != settings.completionBehavior
         modified = modified or (promptHandoffComboBox.selectedItem != settings.promptHandoffBehavior)
         modified = modified or (showNotificationCheckBox.isSelected != settings.showNotificationAfterHandoff)
+        modified = modified or (showAcceptanceCriteriaCheckBox.isSelected != settings.showAcceptanceCriteria)
         val timeout = commandTimeoutField.text.toIntOrNull() ?: 600
         modified = modified or (timeout != settings.commandTimeoutSeconds)
         return modified
@@ -71,6 +74,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
         settings.completionBehavior = completionBehaviorComboBox.selectedItem as CompletionBehavior
         settings.promptHandoffBehavior = promptHandoffComboBox.selectedItem as PromptHandoffBehavior
         settings.showNotificationAfterHandoff = showNotificationCheckBox.isSelected
+        settings.showAcceptanceCriteria = showAcceptanceCriteriaCheckBox.isSelected
         settings.commandTimeoutSeconds = commandTimeoutField.text.toIntOrNull() ?: 600
     }
 
@@ -79,6 +83,7 @@ class OrchestratorSettingsConfigurable(private val project: Project) : Configura
         completionBehaviorComboBox.selectedItem = settings.completionBehavior
         promptHandoffComboBox.selectedItem = settings.promptHandoffBehavior
         showNotificationCheckBox.isSelected = settings.showNotificationAfterHandoff
+        showAcceptanceCriteriaCheckBox.isSelected = settings.showAcceptanceCriteria
         commandTimeoutField.text = settings.commandTimeoutSeconds.toString()
     }
 

@@ -19,6 +19,7 @@ class OrchestratorSettingsTest : BasePlatformTestCase() {
         assertEquals(PromptHandoffBehavior.COPY_TO_CLIPBOARD, settings.promptHandoffBehavior)
         assertTrue(settings.showNotificationAfterHandoff)
         assertEquals(600, settings.commandTimeoutSeconds)
+        assertFalse(settings.showAcceptanceCriteria)
     }
 
     fun `test persistence`() {
@@ -28,12 +29,14 @@ class OrchestratorSettingsTest : BasePlatformTestCase() {
         settings.promptHandoffBehavior = PromptHandoffBehavior.AUTO_COPILOT
         settings.showNotificationAfterHandoff = false
         settings.commandTimeoutSeconds = 300
+        settings.showAcceptanceCriteria = true
 
         val state = settings.state
         assertEquals(CompletionBehavior.CHECK_OFF, state.completionBehavior)
         assertEquals(PromptHandoffBehavior.AUTO_COPILOT, state.promptHandoffBehavior)
         assertFalse(state.showNotificationAfterHandoff)
         assertEquals(300, state.commandTimeoutSeconds)
+        assertTrue(state.showAcceptanceCriteria)
 
         // Simulate reload
         val newSettings = OrchestratorSettings(project)
@@ -43,6 +46,6 @@ class OrchestratorSettingsTest : BasePlatformTestCase() {
         assertEquals(PromptHandoffBehavior.AUTO_COPILOT, newSettings.promptHandoffBehavior)
         assertFalse(newSettings.showNotificationAfterHandoff)
         assertEquals(300, newSettings.commandTimeoutSeconds)
+        assertTrue(newSettings.showAcceptanceCriteria)
     }
 }
-

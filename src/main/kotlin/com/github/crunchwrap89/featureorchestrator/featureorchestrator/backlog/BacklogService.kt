@@ -30,7 +30,7 @@ class BacklogService(private val project: Project) {
 New Landing Page
 
 ### Description
-Add a new "Landing" page for: kustdrönare.se
+Add a new "Landing" page for: nordicdroneops.com
 The main purpose of the website is to inform visitors about our consulting services where eyes are needed below the water surface or from the sky.
 
 We target industries such as aquaculture, environmental monitoring, infrastructure inspection, and maritime research.

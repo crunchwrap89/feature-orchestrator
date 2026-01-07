@@ -5,6 +5,8 @@ import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.Bac
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.BacklogStatus
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.OrchestratorState
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.AcceptanceCriterion
+import com.github.crunchwrap89.featureorchestrator.featureorchestrator.settings.OrchestratorSettings
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
@@ -81,6 +83,10 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         toolTipText = "Remove Feature"
         addActionListener { controller.removeFeature() }
     }
+    private val completeFeatureButton = JButton("✓").apply {
+        toolTipText = "Mark as Completed"
+        addActionListener { controller.completeFeature() }
+    }
 
     private val controller = OrchestratorController(project, this)
     private var lastStatus: BacklogStatus = BacklogStatus.OK
@@ -109,10 +115,11 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
                 add(nextButton, BorderLayout.EAST)
             }
 
-            val featureActionsPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.CENTER, 5, 0)).apply {
+            val featureActionsPanel = WrappingPanel(FlowLayout(FlowLayout.CENTER, 5, 0)).apply {
                 add(addFeatureButton)
                 add(editFeatureButton)
                 add(removeFeatureButton)
+                add(completeFeatureButton)
             }
 
             val navContainer = JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -127,40 +134,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             add(contentPanel, BorderLayout.CENTER)
         }
 
-        val buttons = object : JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.CENTER)) {
-            override fun getPreferredSize(): Dimension {
-                val d = super.getPreferredSize()
-                val parent = parent
-                if (parent != null) {
-                    val width = parent.width
-                    if (width > 0) {
-                        // Calculate height required for this width
-                        val layout = layout as FlowLayout
-                        var rowHeight = 0
-                        var totalHeight = layout.vgap
-                        var rowWidth = layout.hgap
-
-                        for (i in 0 until componentCount) {
-                            val comp = getComponent(i)
-                            if (comp.isVisible) {
-                                val dComp = comp.preferredSize
-                                if (rowWidth + dComp.width > width) {
-                                    totalHeight += rowHeight + layout.vgap
-                                    rowWidth = layout.hgap
-                                    rowHeight = 0
-                                }
-                                rowWidth += dComp.width + layout.hgap
-                                rowHeight = maxOf(rowHeight, dComp.height)
-                            }
-                        }
-                        totalHeight += rowHeight + layout.vgap
-                        d.height = totalHeight
-                        d.width = width // Constrain width to parent
-                    }
-                }
-                return d
-            }
-        }.apply {
+        val buttons = WrappingPanel(FlowLayout(FlowLayout.CENTER)).apply {
             add(runButton)
             add(editBacklogButton)
             add(verifyButton)
@@ -174,6 +148,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             }
             add(titlePanel, BorderLayout.NORTH)
             add(JBScrollPane(acceptanceCriteriaArea), BorderLayout.CENTER)
+            isVisible = project.service<OrchestratorSettings>().showAcceptanceCriteria
         }
 
         val logPanel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -264,6 +239,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
                 addFeatureButton.isEnabled = false
                 editFeatureButton.isEnabled = false
                 removeFeatureButton.isEnabled = false
+                completeFeatureButton.isEnabled = false
 
                 createBacklogButton.text = "Create Backlog"
                 cardLayout.show(centerNavPanel, "BUTTON")
@@ -281,6 +257,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
                 addFeatureButton.isEnabled = true
                 editFeatureButton.isEnabled = false
                 removeFeatureButton.isEnabled = false
+                completeFeatureButton.isEnabled = false
 
                 createBacklogButton.text = "Add Feature"
                 cardLayout.show(centerNavPanel, "BUTTON")
@@ -324,6 +301,7 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
 
         editFeatureButton.isEnabled = feature != null
         removeFeatureButton.isEnabled = feature != null
+        completeFeatureButton.isEnabled = feature != null
 
         if (feature == null) {
             acceptanceCriteriaArea.text = ""
@@ -373,4 +351,39 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
     }
 
     private fun truncate(text: String, max: Int = 600): String = if (text.length <= max) text else text.substring(0, max) + "…"
+}
+
+private class WrappingPanel(layout: FlowLayout) : JBPanel<WrappingPanel>(layout) {
+    override fun getPreferredSize(): Dimension {
+        val d = super.getPreferredSize()
+        val parent = parent
+        if (parent != null) {
+            val width = parent.width
+            if (width > 0) {
+                // Calculate height required for this width
+                val layout = layout as FlowLayout
+                var rowHeight = 0
+                var totalHeight = layout.vgap
+                var rowWidth = layout.hgap
+
+                for (i in 0 until componentCount) {
+                    val comp = getComponent(i)
+                    if (comp.isVisible) {
+                        val dComp = comp.preferredSize
+                        if (rowWidth + dComp.width > width) {
+                            totalHeight += rowHeight + layout.vgap
+                            rowWidth = layout.hgap
+                            rowHeight = 0
+                        }
+                        rowWidth += dComp.width + layout.hgap
+                        rowHeight = maxOf(rowHeight, dComp.height)
+                    }
+                }
+                totalHeight += rowHeight + layout.vgap
+                d.height = totalHeight
+                d.width = width // Constrain width to parent
+            }
+        }
+        return d
+    }
 }

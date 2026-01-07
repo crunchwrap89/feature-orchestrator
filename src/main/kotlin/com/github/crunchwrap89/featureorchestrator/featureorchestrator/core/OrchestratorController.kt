@@ -182,6 +182,23 @@ class OrchestratorController(private val project: Project, private val listener:
         }
     }
 
+    fun completeFeature() {
+        if (availableFeatures.isNotEmpty() && currentFeatureIndex in availableFeatures.indices) {
+            val feature = availableFeatures[currentFeatureIndex]
+            val confirm = Messages.showYesNoDialog(project, "Are you sure you want to mark feature '${feature.name}' as completed?", "Complete Feature", Messages.getQuestionIcon())
+            if (confirm == Messages.YES) {
+                val behavior = settings.completionBehavior
+                val ok = backlogService.markCompletedOrRemove(feature, behavior)
+                if (ok) {
+                    info("Feature '${feature.name}' marked as completed.")
+                    validateBacklog()
+                } else {
+                    warn("Failed to update backlog.md")
+                }
+            }
+        }
+    }
+
     private fun updateFeaturePreview() {
         if (availableFeatures.isNotEmpty() && currentFeatureIndex in availableFeatures.indices) {
             listener.onFeaturePreview(availableFeatures[currentFeatureIndex])

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Add a button for mark as completed
+
 ## [1.1.8] - 2025-12-24
 
 ### Added
