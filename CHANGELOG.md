@@ -7,6 +7,7 @@
 - Add support for selecting agent skills
 - Automatically downloads all agentskills in claude code repo
 - Agent skills will be added to the prompt for the selected feature when skills are selected.
+- remove unecessary features.
 
 ## [1.2.0] - 2026-01-10
 

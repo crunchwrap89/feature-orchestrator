@@ -5,65 +5,59 @@
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/29407.svg)](https://plugins.jetbrains.com/plugin/29407)
 
 <!-- Plugin description -->
-A repeatable and mostly automatic workflow to plan, generate prompts, verify code and manage your backlog without leaving your IDE.
-> ** Plan → Generate prompt → AI Work → Verify implementation → Mark as completed **
+Feature Orchestrator simplifies your development workflow by combining backlog management, Agent Skill selection, and AI prompt generation into a single, repeatable process.
 
-- Today you write prompts and refine your backlog as two different work tasks, why not combine the two?
-- Today you go to a separate tool, such as jira or trello to find out what feature to work on next. Why not keep track of it in your IDE and in your codebase?
-- Today you feed your AI and verify the result with no fixed strategy, why not have a repeatable workflow for it?
-- Today you write follow-up prompts manually if something fails, why not automate that prompt generation?
-- Today you return to your ticket management tool to manually mark your feature as done. Why not automate this? 
+- **Combines prompt writing and backlog refinement** into a single workflow.
+- **Keeps the feature backlog inside the IDE**, versioned alongside the codebase (no external tools required).
+- **Lets you select AI Agent skills** and documentation from a predefined in-IDE list.
+- **Quickly download the latest AI Agent skills** from the Claude Code skills repository.
+- **Preview, Add, Edit, Delete and Mark Features as Completed** with ease.
+- **Works seamlessly with JetBrains AI Assistant**.
+- **Configurable feature templates** for consistent planning.
 
-Feature Orchestrator makes your tough dev life easier by combining feature planning, AI prompt generation, implementation verification and backlog management into a single, repeatable workflow so you can spend less time hanging out in ticket management systems and writing prompts, instead spend more time with your friends and family.
-
+> ** Plan in IDE → Select Agent Skills → Generate prompt → AI Assistant → Mark as completed **
 
 ---
 
 ## How it works
 
-Feature Orchestrator generates a `BACKLOG.md` where you can plan your features with **clear acceptance criterias**.
+Feature Orchestrator uses a `BACKLOG.md` file in your project root where you can plan your features using simple Markdown.
 
-- Cycle through your features and choose which one to implement next.
-- Press Generate prompt to create a **clear, structured AI prompt** for the selected feature.
-- Depending on your plugin settings, it will either just copy the prompt to your clipboard or open your AI assistant with the prompt pre-filled.
-- Let your AI Agent complete the feature.
-- Press **Verify implementation** and the plugin will check if all Acceptance Criteria are fulfilled (by running tests, build commands or file checks.)
-- If acceptance criteria are NOT fulfilled, it will generate a new prompt for you to hand to the AI Agent.
-- If acceptance criteria are fulfilled, it will mark the feature as completed.
-
-
-Works seamless with your current AI Tools.  
-Simple backlog management with Markdown and git versioning.  
-100% Free and Open Source.
+- **Manage Backlog**: Add, edit, and navigate through your features directly within the IDE tool window.
+- **Select Agent Skills**: Choose from available Agent Skills (documentation, style guides, or specialized instructions) to include in your prompt.
+- **Sync Skills**: Download the latest Agent Skills from the Claude Code repository to keep your AI prompts optimized.
+- **Generate Prompt**: Create a structured AI prompt that includes the feature description and selected skills.
+- **AI Handoff**: Automatically copy the prompt to your clipboard or open the AI Assistant with the prompt ready to go.
+- **Mark as Completed**: Once the work is done, mark the feature as completed. The plugin handles checking off the feature or moving it to a `COMPLETED.md` file.
+- **Configurable Templates**: Customize the default template for new features in settings to fit your team's needs.
 
 ---
 ## Designed for developers
 
-- Works entirely with all IntelliJ-based IDEs, including Webstorm.
-- Uses your existing AI plugins
-- Fully transparent execution logs
-- Explicit user actions only
+- **IDE Integrated**: Works with all IntelliJ-based IDEs.
+- **AI Ready**: Deeply integrated with JetBrains AI Assistant.
+- **Transparent**: Fully transparent execution logs.
+- **Manual Control**: Explicit user actions only—no autonomous changes to your code.
 
-Feature Orchestrator never runs on its own and never modifies planning files via AI.
+Feature Orchestrator never runs on its own and never modifies your code or planning files via AI without your command.
 
 ---
 
 ## Who it’s for
 
-- Indie hackers and solo developers
-- AI-first teams
-- Developers shipping fast with Copilot or JetBrains AI
-- Anyone tired of manually keeping backlogs in sync with reality
-- Anyone tired of writing prompts from scratch
-- Anyone who wants to save time and mental energy when working with AI
+- Solo developers and small teams shipping fast.
+- Developers who want to keep their planning close to their code.
+- Teams using JetBrains AI Assistant.
+- Anyone tired of manually keeping backlogs in sync with reality.
+- Anyone who wants to save mental energy by using a repeatable prompt generation workflow.
 
 ---
 
 ## What it is *not*
 
-- Not an autonomous agent
-- Not a background task runner
-- Not another AI chat interface
+- Not an autonomous agent.
+- Not a background task runner.
+- Not another AI chat interface.
 
 It’s a **Feature orchestrator**. 
 
