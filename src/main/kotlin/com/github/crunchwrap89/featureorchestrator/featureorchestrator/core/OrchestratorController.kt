@@ -168,13 +168,23 @@ class OrchestratorController(private val project: Project, private val listener:
     }
 
     fun validateBacklog() {
-        val backlogFile = backlogService.backlogFile()
-        if (backlogFile == null) {
-            setState(OrchestratorState.IDLE)
-            listener.onBacklogStatusChanged(BacklogStatus.MISSING)
-            listener.onNavigationStateChanged(false, false)
-            return
-        }
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Validating Backlog", false) {
+            override fun run(indicator: ProgressIndicator) {
+                val backlogFile = backlogService.backlogFile()
+                ApplicationManager.getApplication().invokeLater {
+                    if (backlogFile == null) {
+                        setState(OrchestratorState.IDLE)
+                        listener.onBacklogStatusChanged(BacklogStatus.MISSING)
+                        listener.onNavigationStateChanged(false, false)
+                    } else {
+                        processBacklog()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun processBacklog() {
         val backlog = backlogService.parseBacklog()
         if (backlog == null) {
             setState(OrchestratorState.IDLE)

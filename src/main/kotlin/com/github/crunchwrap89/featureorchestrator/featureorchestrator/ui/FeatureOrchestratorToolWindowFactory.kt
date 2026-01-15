@@ -5,6 +5,7 @@ import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.Bac
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.BacklogStatus
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.OrchestratorState
 import com.github.crunchwrap89.featureorchestrator.featureorchestrator.model.Skill
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -31,12 +32,17 @@ class FeatureOrchestratorToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val panel = FeatureOrchestratorPanel(project)
         val content = ContentFactory.getInstance().createContent(panel, null, false)
+        content.setDisposer(panel)
         toolWindow.contentManager.addContent(content)
     }
 }
 
-private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<FeatureOrchestratorPanel>(BorderLayout()), OrchestratorController.Listener {
+private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<FeatureOrchestratorPanel>(BorderLayout()), OrchestratorController.Listener, Disposable {
     private val controller = OrchestratorController(project, this)
+
+    override fun dispose() {
+        com.intellij.openapi.util.Disposer.dispose(controller)
+    }
     private var lastStatus: BacklogStatus = BacklogStatus.OK
 
     private val featureName = JBLabel("").apply {
@@ -227,8 +233,9 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
 
     // Listener implementation
     override fun onStateChanged(state: OrchestratorState) {
+        val rb = runButton ?: return
         val canRun = (state == OrchestratorState.IDLE || state == OrchestratorState.FAILED || state == OrchestratorState.COMPLETED || state == OrchestratorState.AWAITING_AI)
-        runButton.isEnabled = canRun && lastStatus == BacklogStatus.OK
+        rb.isEnabled = canRun && lastStatus == BacklogStatus.OK
     }
 
     override fun onLog(message: String) {
@@ -247,16 +254,19 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
     override fun onBacklogStatusChanged(status: BacklogStatus) {
         lastStatus = status
         ApplicationManager.getApplication().executeOnPooledThread {
-            val skills = controller.getAvailableSkills()
+            val skills = try { controller.getAvailableSkills() } catch (e: Exception) { emptyList() }
             ApplicationManager.getApplication().invokeLater {
-                refreshSkills(skills)
+                if (!com.intellij.openapi.util.Disposer.isDisposed(this)) {
+                    refreshSkills(skills)
+                }
             }
         }
+        val rb = runButton ?: return
         when (status) {
             BacklogStatus.MISSING -> {
                 featureDesc.text = "No BACKLOG.md found in project root. Press Create BACKLOG.md to generate a template."
-                runButton.isVisible = true
-                runButton.isEnabled = false
+                rb.isVisible = true
+                rb.isEnabled = false
                 
                 prevEnabled = false
                 nextEnabled = false
@@ -267,8 +277,8 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             BacklogStatus.NO_FEATURES -> {
                 featureName.text = "No Features"
                 featureDesc.text = "No features found in BACKLOG.md. Use the toolbar to add a new feature."
-                runButton.isVisible = true
-                runButton.isEnabled = false
+                rb.isVisible = true
+                rb.isEnabled = false
                 
                 prevEnabled = false
                 nextEnabled = false
@@ -277,10 +287,10 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
                 cardLayout.show(centerNavPanel, "EMPTY")
             }
             BacklogStatus.OK -> {
-                runButton.isVisible = true
+                rb.isVisible = true
                 val state = controller.state
                 val canRun = (state == OrchestratorState.IDLE || state == OrchestratorState.FAILED || state == OrchestratorState.COMPLETED || state == OrchestratorState.AWAITING_AI)
-                runButton.isEnabled = canRun
+                rb.isEnabled = canRun
 
                 cardLayout.show(centerNavPanel, "LABEL")
             }
@@ -296,13 +306,15 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
         ApplicationManager.getApplication().executeOnPooledThread {
             val skills = controller.getAvailableSkills()
             ApplicationManager.getApplication().invokeLater {
-                refreshSkills(skills)
+                if (!com.intellij.openapi.util.Disposer.isDisposed(this)) {
+                    refreshSkills(skills)
+                }
             }
         }
     }
 
     override fun onFeatureSelected(feature: BacklogFeature?) {
-        if (lastStatus != BacklogStatus.OK) return
+        if (runButton == null || lastStatus != BacklogStatus.OK) return
         featureName.text = feature?.let { "${it.name}" } ?: "No feature selected"
         featureDesc.text = feature?.description?.let { truncate(it) } ?: ""
         featureSelected = feature != null

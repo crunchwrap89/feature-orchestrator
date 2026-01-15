@@ -63,8 +63,15 @@ class OrchestratorControllerTest : BasePlatformTestCase() {
             Desc 2
         """.trimIndent())
 
+        // Initial validation (async)
+        controller.validateBacklog()
+        waitForState(OrchestratorState.IDLE) // Wait for validation to finish (it starts at IDLE, so this is just to ensure it's not BUSY)
+        // Actually we need to wait for availableFeatures to be populated.
+        // Let's use a simpler wait for state after runNextFeature.
+
         // Run next feature (Feature 1)
         controller.runNextFeature()
+        waitForState(OrchestratorState.AWAITING_AI)
         assertEquals(OrchestratorState.AWAITING_AI, lastState.get())
 
         // Complete manually (since verification is gone)
