@@ -3,6 +3,13 @@
 ## [Unreleased]
 
 ### Added
+
+- Added ability to add new skills manually.
+
+## [2.0.1] - 2026-01-14
+
+### Added
+
 - Improved the UI Design and layout with a modern, native IntelliJ look and feel.
 - New toolbar for feature navigation and actions (Add, Edit, Remove, Complete).
 - Redesigned Agent Skills panel for better visibility and interaction.
@@ -10,6 +17,7 @@
 - Agent Skills are now stored globally and shared across projects, preventing VCS pollution.
 
 ### Fixed
+
 - Fixed issue were skills were installed in project folder instead of global.
 
 ## [2.0.0] - 2026-01-14
@@ -118,7 +126,8 @@
 - Plugin settings to customize behavior and preferences.
 - Have your features tracked in Git and easily check which changes are related to which feature.
 
-[Unreleased]: https://github.com/crunchwrap89/feature-orchestrator/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/crunchwrap89/feature-orchestrator/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/crunchwrap89/feature-orchestrator/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/crunchwrap89/feature-orchestrator/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/crunchwrap89/feature-orchestrator/compare/v1.1.9...v1.2.0
 [1.1.9]: https://github.com/crunchwrap89/feature-orchestrator/compare/v1.1.8...v1.1.9

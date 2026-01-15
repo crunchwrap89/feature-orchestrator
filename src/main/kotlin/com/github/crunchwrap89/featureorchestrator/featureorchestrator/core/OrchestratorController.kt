@@ -46,6 +46,21 @@ class OrchestratorController(private val project: Project, private val listener:
 
     fun getAvailableSkills(): List<Skill> = project.service<SkillService>().loadSkills()
 
+    fun addSkill() {
+        val name = Messages.showInputDialog(project, "Enter skill name:", "Add New Skill", null)
+        if (!name.isNullOrBlank()) {
+            val skillFile = project.service<SkillService>().addManualSkill(name)
+            if (skillFile != null) {
+                val virtualFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(skillFile)
+                if (virtualFile != null) {
+                    FileEditorManager.getInstance(project).openFile(virtualFile, true)
+                }
+            } else {
+                Messages.showErrorDialog(project, "Skill with name '$name' already exists.", "Error")
+            }
+        }
+    }
+
     fun downloadSkills() {
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Downloading Agent Skills", true) {
             override fun run(indicator: ProgressIndicator) {
@@ -90,9 +105,28 @@ class OrchestratorController(private val project: Project, private val listener:
     init {
         // Migration: Remove the project-local skills directory if it exists
         project.basePath?.let { basePath ->
-            val oldSkillsDir = java.io.File(basePath, ".aiassistant/skills")
-            if (oldSkillsDir.exists()) {
-                oldSkillsDir.deleteRecursively()
+            val oldLocalSkillsDir = java.io.File(basePath, ".aiassistant/skills")
+            if (oldLocalSkillsDir.exists()) {
+                // Before deleting, try to migrate any manual skills to the global directory
+                try {
+                    val skillService = project.service<SkillService>()
+                    val globalSkillsDir = java.io.File(skillService.getSkillsDir()?.path ?: "")
+                    if (globalSkillsDir.exists()) {
+                        oldLocalSkillsDir.listFiles()?.filter { it.isDirectory }?.forEach { skillDir ->
+                            val skillMd = java.io.File(skillDir, "SKILL.md")
+                            if (skillMd.exists() && skillMd.readText().contains("manual: true")) {
+                                val targetDir = java.io.File(globalSkillsDir, skillDir.name)
+                                if (!targetDir.exists()) {
+                                    skillDir.copyRecursively(targetDir)
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Logger.getInstance(OrchestratorController::class.java).warn("Failed to migrate manual skills from project to global dir", e)
+                }
+
+                oldLocalSkillsDir.deleteRecursively()
                 LocalFileSystem.getInstance().refreshAndFindFileByIoFile(java.io.File(basePath, ".aiassistant"))?.refresh(false, true)
             }
         }

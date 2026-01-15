@@ -158,9 +158,17 @@ private class FeatureOrchestratorPanel(private val project: Project) : JBPanel<F
             )
             background = UIUtil.getPanelBackground()
             add(JBLabel("Agent Skills").apply { font = JBUI.Fonts.smallFont() }, BorderLayout.WEST)
-            add(ActionButton(object : AnAction("Refresh Skills", "Refresh available skills", AllIcons.Actions.Refresh) {
-                override fun actionPerformed(e: AnActionEvent) = controller.downloadSkills()
-            }, null, "FeatureOrchestratorSkills", ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE), BorderLayout.EAST)
+            
+            val actionsPanel = JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.RIGHT, 0, 0)).apply {
+                isOpaque = false
+                add(ActionButton(object : AnAction("Add Skill", "Add a new manual skill", AllIcons.General.Add) {
+                    override fun actionPerformed(e: AnActionEvent) = controller.addSkill()
+                }, null, "FeatureOrchestratorAddSkill", ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE))
+                add(ActionButton(object : AnAction("Refresh Skills", "Refresh available skills", AllIcons.Actions.Refresh) {
+                    override fun actionPerformed(e: AnActionEvent) = controller.downloadSkills()
+                }, null, "FeatureOrchestratorSkills", ActionToolbar.DEFAULT_MINIMUM_BUTTON_SIZE))
+            }
+            add(actionsPanel, BorderLayout.EAST)
         }
 
         val skillsContainer = JBPanel<JBPanel<*>>(BorderLayout()).apply {

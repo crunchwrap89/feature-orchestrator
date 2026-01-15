@@ -18,8 +18,43 @@ import java.nio.file.Paths
 
 @Service(Service.Level.PROJECT)
 class SkillService(private val project: Project) {
+    internal var skillsDirOverride: String? = null
+
     private val globalSkillsDir: String by lazy {
-        Paths.get(PathManager.getSystemPath(), "feature-orchestrator", "skills").toString()
+        skillsDirOverride ?: run {
+            val systemPath = PathManager.getSystemPath()
+            val newDir = Paths.get(systemPath, "feature-orchestrator", "skills").toString()
+            
+            // Migration from ~/.feature-orchestrator/skills if it exists
+            val userHome = System.getProperty("user.home")
+            val oldGlobalDir = Paths.get(userHome, ".feature-orchestrator", "skills").toFile()
+            val newDirFile = File(newDir)
+            
+            if (oldGlobalDir.exists()) {
+                if (!newDirFile.exists()) {
+                    try {
+                        newDirFile.parentFile.mkdirs()
+                        oldGlobalDir.renameTo(newDirFile)
+                        if (!newDirFile.exists()) {
+                            oldGlobalDir.copyRecursively(newDirFile)
+                            oldGlobalDir.deleteRecursively()
+                        }
+                    } catch (e: Exception) {
+                        thisLogger().warn("Failed to migrate skills from $oldGlobalDir to $newDir", e)
+                    }
+                } else {
+                    // Both exist? Move manual skills from ~/.feature-orchestrator/skills to system path
+                    oldGlobalDir.listFiles()?.filter { it.isDirectory }?.forEach { skillDir ->
+                        val targetDir = File(newDirFile, skillDir.name)
+                        if (!targetDir.exists()) {
+                            skillDir.renameTo(targetDir)
+                        }
+                    }
+                }
+            }
+            
+            newDir
+        }
     }
     private val logger = thisLogger()
 
@@ -35,7 +70,7 @@ class SkillService(private val project: Project) {
         if (!dir.exists()) {
             dir.mkdirs()
         }
-        return LocalFileSystem.getInstance().refreshAndFindFileByPath(globalSkillsDir)
+        return LocalFileSystem.getInstance().refreshAndFindFileByIoFile(dir)
     }
 
 
@@ -61,26 +96,32 @@ class SkillService(private val project: Project) {
         } catch (e: Exception) {
             return null
         }
-        // Simple frontmatter parser
-        if (!content.startsWith("---")) return null
-        val endOfFrontmatter = content.indexOf("---", 3)
-        if (endOfFrontmatter == -1) return null
-
-        val frontmatter = content.substring(3, endOfFrontmatter)
-        val lines = frontmatter.lines()
+        
         var name = ""
         var description = ""
 
-        lines.forEach { line ->
-            val trimmed = line.trim()
-            if (trimmed.startsWith("name:")) {
-                name = trimmed.substringAfter("name:").trim().removeSurrounding("\"").removeSurrounding("'")
-            } else if (trimmed.startsWith("description:")) {
-                description = trimmed.substringAfter("description:").trim().removeSurrounding("\"").removeSurrounding("'")
+        // Simple frontmatter parser
+        if (content.startsWith("---")) {
+            val endOfFrontmatter = content.indexOf("---", 3)
+            if (endOfFrontmatter != -1) {
+                val frontmatter = content.substring(3, endOfFrontmatter)
+                val lines = frontmatter.lines()
+
+                lines.forEach { line ->
+                    val trimmed = line.trim()
+                    if (trimmed.startsWith("name:")) {
+                        name = trimmed.substringAfter("name:").trim().removeSurrounding("\"").removeSurrounding("'")
+                    } else if (trimmed.startsWith("description:")) {
+                        description = trimmed.substringAfter("description:").trim().removeSurrounding("\"").removeSurrounding("'")
+                    }
+                }
             }
         }
 
-        if (name.isBlank()) return null
+        if (name.isBlank()) {
+            // Use directory name as fallback
+            name = skillMd.parent.name
+        }
         return Skill(name, description, skillMd.path)
     }
 
@@ -91,6 +132,29 @@ class SkillService(private val project: Project) {
         }
 
         downloadSkills(indicator)
+    }
+
+    fun addManualSkill(name: String): File? {
+        val skillDir = File(globalSkillsDir, name)
+        if (skillDir.exists()) {
+            return null
+        }
+        skillDir.mkdirs()
+        val skillMd = File(skillDir, "SKILL.md")
+        skillMd.writeText("""
+            ---
+            name: $name
+            manual: true
+            ---
+            
+            Description of the skill goes here.
+        """.trimIndent())
+        
+        LocalFileSystem.getInstance().refreshAndFindFileByIoFile(skillDir)
+        ApplicationManager.getApplication().invokeLater {
+            project.messageBus.syncPublisher(SkillsUpdateListener.TOPIC).onSkillsUpdated()
+        }
+        return skillMd
     }
 
     fun downloadSkills(indicator: ProgressIndicator? = null) {
@@ -114,11 +178,29 @@ class SkillService(private val project: Project) {
 
             val skillDirs = contents.filter { it.type == "dir" }
             val total = skillDirs.size
+            
+            // Track which skills are from GitHub
+            val githubSkillNames = skillDirs.map { it.name }.toSet()
+            
             skillDirs.forEachIndexed { index, dir ->
                 indicator?.checkCanceled()
                 indicator?.fraction = index.toDouble() / total
                 indicator?.text = "Downloading skill: ${dir.name} ($index/$total)"
-                downloadSkill(dir.name, dir.url)
+                
+                val skillDir = File(globalSkillsDir, dir.name)
+                val skillMdFile = File(skillDir, "SKILL.md")
+                
+                if (skillMdFile.exists()) {
+                    // Check if it's a manual skill
+                    val content = skillMdFile.readText()
+                    if (content.contains("manual: true")) {
+                        logger.info("Skipping official download for manual skill: ${dir.name}")
+                    } else {
+                        downloadSkill(dir.name, dir.url)
+                    }
+                } else {
+                    downloadSkill(dir.name, dir.url)
+                }
                 
                 // Refresh VFS for the new skill folder
                 val skillDirFile = File(globalSkillsDir, dir.name)
